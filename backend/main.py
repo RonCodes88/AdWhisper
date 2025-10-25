@@ -2,37 +2,14 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-from chroma import ChromaDB
 import uuid
 from typing import Dict, Any
-import asyncio
+import requests
 
-# Import uAgent for agent communication
-from uagents import Agent, Context
-from agents.shared_models import AdContentRequest, IngestionAcknowledgement
+# Note: No uAgents imports needed here - we just make HTTP requests!
+# ChromaDB is managed by agents, not by FastAPI
 
 app = FastAPI()
-
-# Lazy load ChromaDB
-_db = None
-def get_db():
-    global _db
-    if _db is None:
-        print("🔄 Initializing ChromaDB...")
-        _db = ChromaDB()
-        print("✅ ChromaDB initialized")
-    return _db
-
-# Ingestion Agent address (update this after starting the Ingestion Agent)
-INGESTION_AGENT_ADDRESS = "agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv"
-
-# Create a simple uAgent for FastAPI to send messages
-fastapi_agent = Agent(
-    name="fastapi_bridge",
-    seed="fastapi_bridge_agent_unique_seed_2024",
-    port=8200,
-    endpoint=["http://localhost:8200/submit"]
-)
 
 # Configure CORS
 app.add_middleware(
@@ -50,60 +27,57 @@ async def startup_event():
     print("✅ FastAPI server ready")
     print("📍 Listening on http://localhost:8000")
     print("🔗 CORS enabled for http://localhost:3000")
-    print(f"🤖 FastAPI Bridge Agent: {fastapi_agent.address}")
-    print(f"📤 Will send messages to Ingestion Agent: {INGESTION_AGENT_ADDRESS}")
+    print(f"📤 Will send HTTP requests to Ingestion Agent: {INGESTION_AGENT_REST_ENDPOINT}")
     print("")
 
-    # Start the uAgent in the background
-    asyncio.create_task(run_agent_background())
+
+# Configuration
+ENABLE_AGENT_CALLS = True  # Set to False to disable agent communication
+INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/submit"
 
 
-async def run_agent_background():
-    """Run the uAgent in the background"""
+def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):
+    """
+    Background task to call Ingestion Agent via REST
+    This runs AFTER the response is sent to the frontend (non-blocking)
+    """
+    print(f"\n{'='*70}")
+    print(f"📤 CALLING INGESTION AGENT (Background Task)")
+    print(f"{'='*70}")
+    print(f"📝 Request ID: {request_id}")
+    print(f"🎯 Endpoint: {INGESTION_AGENT_REST_ENDPOINT}")
+    
     try:
-        # The agent needs to run to be able to send messages
-        # We run it in a way that doesn't block FastAPI
-        await fastapi_agent._startup()
+        response = requests.post(
+            INGESTION_AGENT_REST_ENDPOINT,
+            json=ingestion_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ SUCCESS - Ingestion Agent responded!")
+            print(f"📨 Agent Status: {result.get('status', 'unknown')}")
+            print(f"💬 Agent Message: {result.get('message', 'No message')}")
+        else:
+            print(f"⚠️ WARNING - Ingestion Agent returned HTTP {response.status_code}")
+            print(f"Response: {response.text[:200]}")
+            
+    except requests.exceptions.ConnectionError:
+        print(f"❌ ERROR - Could not connect to Ingestion Agent")
+        print(f"   Make sure it's running: python agents/ingestion_agent.py")
+    except requests.exceptions.Timeout:
+        print(f"⏱️ ERROR - Ingestion Agent timed out (took > 10s)")
     except Exception as e:
-        print(f"⚠️ Error starting FastAPI agent: {e}")
+        print(f"❌ ERROR - Unexpected error: {type(e).__name__}: {str(e)}")
+    finally:
+        print(f"{'='*70}\n")
 
 
 # Request/Response Models
 class YouTubeAnalysisRequest(BaseModel):
     youtube_url: str
-
-
-def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):
-    """
-    Background task to call the Ingestion Agent without blocking the response.
-    This runs AFTER the response is sent to the frontend.
-    """
-    print(f"\n🔄 [BACKGROUND] Calling Ingestion Agent for request {request_id}")
-    
-    try:
-        response = requests.post(
-            INGESTION_AGENT_ENDPOINT,
-            json=ingestion_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            print(f"✅ [BACKGROUND] Ingestion Agent processed request {request_id}")
-            try:
-                result = response.json()
-                print(f"📨 [BACKGROUND] Agent response: {result}")
-            except:
-                print(f"⚠️ [BACKGROUND] Could not parse agent response")
-        else:
-            print(f"⚠️ [BACKGROUND] Agent returned status {response.status_code}")
-            
-    except requests.exceptions.ConnectionError:
-        print(f"⚠️ [BACKGROUND] Ingestion Agent not running at {INGESTION_AGENT_ENDPOINT}")
-    except requests.exceptions.Timeout:
-        print(f"⏰ [BACKGROUND] Agent timeout after 30s")
-    except Exception as e:
-        print(f"❌ [BACKGROUND] Error calling agent: {type(e).__name__}: {str(e)[:100]}")
 
 
 @app.get("/")
@@ -118,9 +92,8 @@ async def health():
 
 @app.get("/documents")
 async def get_documents():
-    db = get_db()
-    documents = db.collection.get()
-    return {"documents": documents}
+    """ChromaDB is managed by the Ingestion Agent"""
+    return {"message": "ChromaDB operations are handled by the Ingestion Agent", "status": "not_available_here"}
 
 
 @app.post("/api/analyze-youtube")
