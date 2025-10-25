@@ -32,10 +32,10 @@ function FeatureCard({
 }) {
   return (
     <div
-      className={`w-full md:flex-1 self-stretch px-6 md:px-6 pt-10 md:pt-9 pb-10 md:pb-9 overflow-hidden flex flex-col justify-start items-start cursor-pointer relative border-b md:border-b-0 last:border-b-0 min-h-[180px] md:min-h-[200px] ${
+      className={`w-full px-6 md:px-6 py-8 md:py-9 overflow-hidden flex flex-col justify-start items-start cursor-pointer relative rounded-lg border min-h-[180px] md:min_h-[200px] transition-shadow ${
         isActive
-          ? "bg-white shadow-[0px_0px_0px_0.75px_rgba(0,0,0,0.08)_inset]"
-          : "bg-background/75 border-l-0 border-r-0 md:border border-border"
+          ? "bg-white border-primary/30 shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset]"
+          : "bg-white border-border hover:shadow-sm"
       }`}
       onClick={onClick}
     >
@@ -160,14 +160,11 @@ export default function LandingPage() {
               <div className="w-full max-w-[937px] lg:w-[937px] flex flex-col justify-center items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6 relative z-10">
                 <div className="self-stretch rounded-[3px] flex flex-col justify-center items-center gap-4 sm:gap-5 md:gap-6 lg:gap-8">
                   <div className="w-full max-w-[748.71px] lg:w-[748.71px] text-center flex justify-center flex-col text-foreground text-[24px] xs:text-[28px] sm:text-[36px] md:text-[52px] lg:text-[80px] font-bold leading-[1.1] sm:leading-[1.15] md:leading-[1.2] lg:leading-24 font-serif px-2 sm:px-4 md:px-0">
-                    Detect bias in ads
-                    <br />
-                    before they go live
+                    <span className="block animate-pop-in [animation-duration:1600ms] [animation-delay:200ms]">Detect bias in ads</span>
+                    <span className="block animate-pop-in [animation-duration:1600ms] [animation-delay:650ms]">before they go live</span>
                   </div>
-                  <div className="w-full max-w-[506.08px] lg:w-[506.08px] text-center flex justify-center flex-col text-muted-foreground sm:text-lg md:text-xl leading-[1.4] sm:leading-[1.45] md:leading-[1.5] lg:leading-7 font-sans px-2 sm:px-4 md:px-0 lg:text-lg font-medium text-sm">
-                    AI-powered multi-agent system that scans ad scripts and visuals
-                    <br className="hidden sm:block" />
-                    for subconscious bias, suggests inclusive rewrites, and delivers audit reports.
+                  <div className="w-full max-w-[720px] lg:w-[720px] text-center flex justify-center flex-col text-muted-foreground sm:text-lg md:text-xl leading-[1.5] sm:leading-[1.55] md:leading-[1.6] font-sans px-4 sm:px-6 md:px-0 lg:text-lg font-medium text-sm text-pretty animate-fade-up [animation-delay:650ms]">
+                    AI-powered multi-agent system that scans ad scripts and visuals for subconscious bias, suggests inclusive rewrites, and delivers audit reports.
                   </div>
                 </div>
               </div>
@@ -176,7 +173,7 @@ export default function LandingPage() {
                 <div className="backdrop-blur-[8.25px] flex justify-start items-center gap-4">
                   <Link href="/upload">
                     <button className="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center cursor-pointer hover:opacity-90 transition-opacity">
-                      <div className="w-20 sm:w-24 md:w-28 lg:w-44 h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"></div>
+                      <div className="absolute inset-0 h-full w-full bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"></div>
                       <div className="flex flex-col justify-center text-primary-foreground text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans">
                         Try for free
                       </div>
@@ -242,19 +239,8 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="self-stretch border-t border-border border-b border-border flex justify-center items-start">
-                <div className="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
-                  <div className="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
-                    {Array.from({ length: 50 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[0.5px] outline-border outline-offset-[-0.25px]"
-                      ></div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex-1 px-0 sm:px-2 md:px-0 flex flex-col md:flex-row justify-center items-stretch gap-0">
+              <div className="self-stretch px-0 sm:px-2 md:px-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                   <FeatureCard
                     title="Text Bias Analysis"
                     description="AI scans ad scripts for gendered, racial, or stereotypical language and flags problematic patterns."
@@ -276,17 +262,6 @@ export default function LandingPage() {
                     progress={activeCard === 2 ? progress : 0}
                     onClick={() => handleCardClick(2)}
                   />
-                </div>
-
-                <div className="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
-                  <div className="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
-                    {Array.from({ length: 50 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[0.5px] outline-border outline-offset-[-0.25px]"
-                      ></div>
-                    ))}
-                  </div>
                 </div>
               </div>
 
