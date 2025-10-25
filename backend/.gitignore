@@ -1,2 +1,4 @@
 __pycache__
 adwhisper
+.chroma_db/
+*.sqlite3
