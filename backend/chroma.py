@@ -1,6 +1,4 @@
 import chromadb
-from chromadb.config import Settings
-
 
 class ChromaDB:
     _instance = None
@@ -10,12 +8,7 @@ class ChromaDB:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(ChromaDB, cls).__new__(cls)
-            cls._client = chromadb.Client(
-                Settings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory=".chroma_db"
-                )
-            )
+            cls._client = chromadb.PersistentClient(path=".chroma_db")
             cls._collection = cls._client.get_or_create_collection(name="adwhisper_collection")
         return cls._instance
 
