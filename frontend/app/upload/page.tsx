@@ -170,7 +170,7 @@ export default function UploadPage() {
                       disabled={isLoading || !youtubeUrl}
                       className="w-full h-12 px-8 py-2 relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center transition-all hover:shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.12)_inset] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="w-full h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"></div>
+                      <div className="absolute inset-0 h-full w-full bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"></div>
                       <div className="flex items-center gap-2 text-primary-foreground text-[15px] font-medium leading-5 font-sans">
                         {isLoading ? (
                           <>
