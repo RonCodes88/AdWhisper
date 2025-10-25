@@ -31,25 +31,25 @@ function FeatureCard({
 }) {
   return (
     <div
-      className={`w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0 ${
+      className={`w-full md:flex-1 self-stretch px-6 md:px-6 pt-6 md:pt-5 pb-3 overflow-hidden flex flex-col justify-start items-start cursor-pointer relative border-b md:border-b-0 last:border-b-0 ${
         isActive
           ? "bg-white shadow-[0px_0px_0px_0.75px_rgba(0,0,0,0.08)_inset]"
           : "border-l-0 border-r-0 md:border border-border"
       }`}
       onClick={onClick}
     >
-      {isActive && (
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-muted">
-          <div className="h-full bg-accent transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
-        </div>
-      )}
-
-      <div className="self-stretch flex justify-center flex-col text-foreground text-sm md:text-sm font-semibold leading-6 md:leading-6 font-sans">
+      <div className="self-stretch flex justify-center flex-col text-foreground text-sm md:text-sm font-semibold leading-6 md:leading-6 font-sans mb-2">
         {title}
       </div>
       <div className="self-stretch text-muted-foreground text-[13px] md:text-[13px] font-normal leading-[22px] md:leading-[22px] font-sans">
         {description}
       </div>
+
+      {isActive && (
+        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-border">
+          <div className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
+        </div>
+      )}
     </div>
   )
 }
