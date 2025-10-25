@@ -1,4 +1,5 @@
 __pycache__
 adwhisper
-.env
-.chroma_db
+/.chroma_db/
+*.db
+*.sqlite3
