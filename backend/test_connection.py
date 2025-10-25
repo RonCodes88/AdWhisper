@@ -28,13 +28,29 @@ except:
 # Test 2: Check if Ingestion Agent is running
 print("\n2️⃣ Checking if Ingestion Agent is running...")
 try:
-    # Try to ping the ingestion agent
-    response = requests.get("http://localhost:8100/", timeout=5)
-    print("   ✅ Ingestion Agent is running on port 8100")
-except:
+    # Test the REST endpoint directly
+    test_payload = {
+        "request_id": "test_123",
+        "content_type": "video",
+        "text_content": "Test content",
+        "video_url": "https://example.com/test.mp4",
+        "metadata": {"test": True}
+    }
+    response = requests.post(
+        "http://localhost:8100/analyze",
+        json=test_payload,
+        timeout=5
+    )
+    if response.status_code == 200:
+        print("   ✅ Ingestion Agent is running on port 8100")
+        print(f"   📨 Response: {response.json()}")
+    else:
+        print(f"   ⚠️ Ingestion Agent returned status: {response.status_code}")
+except Exception as e:
     print("   ❌ Ingestion Agent is NOT running!")
+    print(f"   Error: {e}")
     print("   Start it with: cd backend/agents && python ingestion_agent.py")
-    exit(1)
+    print("\n   ⚠️ Continuing without agent (FastAPI will work but won't process through agents)...")
 
 # Test 3: Send a test YouTube URL through the full pipeline
 print("\n3️⃣ Testing complete flow with YouTube URL...")
@@ -54,6 +70,7 @@ try:
         print(f"   📝 Request ID: {result.get('request_id')}")
         print(f"   📊 Status: {result.get('status')}")
         print(f"   💬 Message: {result.get('message')}")
+        print(f"   🎯 Bias Score: {result.get('bias_score')}")
     else:
         print(f"   ❌ Request failed with status: {response.status_code}")
         print(f"   Error: {response.text}")
@@ -64,6 +81,6 @@ except Exception as e:
 print("\n" + "="*60)
 print("✅ TEST COMPLETE!")
 print("\nCheck the terminal logs:")
-print("  • Terminal 1 (Ingestion Agent): Should show received request")
-print("  • Terminal 2 (FastAPI): Should show sent to ingestion agent")
+print("  • Terminal 1 (Ingestion Agent): Should show '🌐 REST request received'")
+print("  • Terminal 2 (FastAPI): Should show '✅ Ingestion Agent received request'")
 

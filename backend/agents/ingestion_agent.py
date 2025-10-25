@@ -112,10 +112,9 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🧹 Cleaning up resources...")
 
 
-@ingestion_protocol.on_message(model=AdContentRequest, replies=IngestionAcknowledgement)
-async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
+async def process_ad_content(ctx: Context, msg: AdContentRequest) -> IngestionAcknowledgement:
     """
-    Handle incoming ad content, generate embeddings, and route to analysis agents.
+    Shared processing logic for ad content (used by both protocol and REST)
     """
     try:
         ctx.logger.info(f"📨 Received ad content request: {msg.request_id}")
@@ -123,7 +122,6 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
         
         # Store request in context storage
         ctx.storage.set(msg.request_id, {
-            "sender": sender,
             "content_type": msg.content_type.value,
             "received_at": datetime.now(UTC).isoformat()
         })
@@ -163,24 +161,40 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
         ctx.logger.info(f"🔀 Routing content to analysis agents...")
         await route_to_analysis_agents(ctx, embedding_package, msg)
         
-        # Send acknowledgement back to sender
-        acknowledgement = IngestionAcknowledgement(
+        ctx.logger.info(f"✅ Request {msg.request_id} processed successfully")
+        
+        return IngestionAcknowledgement(
             request_id=msg.request_id,
             status="success",
             message=f"Content ingested and routed for analysis. Collection ID: {collection_id}"
         )
         
-        await ctx.send(sender, acknowledgement)
-        ctx.logger.info(f"✅ Request {msg.request_id} processed successfully")
-        
     except Exception as e:
         ctx.logger.error(f"❌ Error processing request {msg.request_id}: {e}")
-        error_ack = IngestionAcknowledgement(
+        return IngestionAcknowledgement(
             request_id=msg.request_id,
             status="error",
             message=f"Error during ingestion: {str(e)}"
         )
-        await ctx.send(sender, error_ack)
+
+
+@ingestion_protocol.on_message(model=AdContentRequest, replies=IngestionAcknowledgement)
+async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
+    """
+    Handle incoming ad content from other agents via protocol
+    """
+    acknowledgement = await process_ad_content(ctx, msg)
+    await ctx.send(sender, acknowledgement)
+
+
+@ingestion_agent.on_rest_post("/analyze", AdContentRequest, IngestionAcknowledgement)
+async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
+    """
+    REST endpoint for FastAPI to send content directly
+    Usage: POST http://localhost:8100/analyze
+    """
+    ctx.logger.info(f"🌐 REST request received: {req.request_id}")
+    return await process_ad_content(ctx, req)
 
 
 async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[str, Any]:
@@ -303,6 +317,10 @@ Capabilities:
   ✓ Generates embeddings (text + visual)
   ✓ Stores in ChromaDB for RAG retrieval
   ✓ Routes to specialized analysis agents
+
+Endpoints:
+  • Agent Protocol: http://localhost:8100/submit
+  • REST API: http://localhost:8100/analyze
 
 📍 Waiting for requests...
 🛑 Stop with Ctrl+C

@@ -10,8 +10,8 @@ from typing import Dict, Any
 app = FastAPI()
 db = ChromaDB()
 
-# Ingestion Agent endpoint
-INGESTION_AGENT_ENDPOINT = "http://localhost:8100/submit"
+# Ingestion Agent REST endpoint
+INGESTION_AGENT_ENDPOINT = "http://localhost:8100/analyze"
 
 # Configure CORS
 app.add_middleware(
