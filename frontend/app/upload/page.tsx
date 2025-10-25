@@ -13,33 +13,81 @@ export default function UploadPage() {
     setError("")
     setAnalysisResult(null)
 
+    console.log("========================================")
+    console.log("🎬 YouTube Analysis Submission Started")
+    console.log("========================================")
+    console.log("📝 YouTube URL:", youtubeUrl)
+
     // Validate YouTube URL
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/
     if (!youtubeRegex.test(youtubeUrl)) {
+      console.log("❌ Validation failed: Invalid YouTube URL")
       setError("Please enter a valid YouTube URL")
       return
     }
+    console.log("✅ URL validation passed")
 
     setIsLoading(true)
+    console.log("⏳ Setting loading state to true")
 
     try {
-      const response = await fetch("http://localhost:8000/api/analyze-youtube", {
+      const apiUrl = "http://localhost:8000/api/analyze-youtube"
+      const payload = { youtube_url: youtubeUrl }
+      
+      console.log("\n📤 Sending request to backend:")
+      console.log("   URL:", apiUrl)
+      console.log("   Method: POST")
+      console.log("   Payload:", payload)
+      console.log("   Timestamp:", new Date().toISOString())
+      
+      const startTime = Date.now()
+      
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ youtube_url: youtubeUrl }),
+        body: JSON.stringify(payload),
       })
 
+      const responseTime = Date.now() - startTime
+      console.log(`\n📥 Response received (${responseTime}ms)`)
+      console.log("   Status:", response.status)
+      console.log("   Status Text:", response.statusText)
+      console.log("   OK:", response.ok)
+
       if (!response.ok) {
-        throw new Error("Failed to analyze video")
+        console.log("❌ Response not OK")
+        const errorText = await response.text()
+        console.log("   Error body:", errorText)
+        throw new Error(`Failed to analyze video (${response.status})`)
       }
 
+      console.log("📦 Parsing JSON response...")
       const result = await response.json()
+      console.log("✅ Response parsed successfully:")
+      console.log(result)
+      
       setAnalysisResult(result)
+      console.log("✅ Analysis result set in state")
+      console.log("========================================\n")
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred while analyzing the video")
+      console.log("\n❌ ERROR OCCURRED:")
+      console.log("   Type:", err instanceof Error ? err.constructor.name : typeof err)
+      console.log("   Message:", err instanceof Error ? err.message : String(err))
+      console.log("   Full error:", err)
+      console.log("========================================\n")
+      
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while analyzing the video"
+      setError(errorMessage)
+      
+      // Check if it's a network error
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("Cannot connect to backend server. Make sure it's running on http://localhost:8000")
+      }
     } finally {
+      console.log("🔄 Cleaning up - setting loading to false")
       setIsLoading(false)
     }
   }

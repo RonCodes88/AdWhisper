@@ -8,6 +8,7 @@ uagents-adapter
 
 # Vector Database
 chromadb
+protobuf>=4.21.6,<6.0.0
 
 # Embeddings & ML Models
 sentence-transformers
@@ -15,6 +16,10 @@ openai
 transformers
 torch
 pillow
+
+# YouTube Processing
+youtube-transcript-api
+pytube
 
 # Utilities
 python-dotenv

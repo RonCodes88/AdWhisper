@@ -15,66 +15,32 @@ from pydantic import Field
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
 from enum import Enum
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+# Import ChromaDB
+from chroma import ChromaDB
+
+# Import shared models
+from agents.shared_models import (
+    EmbeddingPackage,
+    TextBiasReport,
+    BiasAnalysisComplete,
+    BiasCategory,
+    create_bias_instance_dict,
+    AgentError
+)
 
 
-# Bias types enumeration
-class BiasType(str, Enum):
-    GENDER = "gender_bias"
-    RACIAL = "racial_bias"
-    AGE = "age_bias"
-    SOCIOECONOMIC = "socioeconomic_bias"
-    DISABILITY = "disability_bias"
-    LGBTQ = "lgbtq_bias"
-
-
+# Severity levels
 class SeverityLevel(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
-
-
-# Message Models
-class TextAnalysisRequest(Model):
-    """Request for text bias analysis"""
-    request_id: str
-    text_content: str
-    text_embedding: Optional[List[float]] = None
-    chromadb_collection_id: str
-    metadata: Optional[Dict[str, Any]] = None
-    timestamp: str = ""
-
-    def __init__(self, **data):
-        if 'timestamp' not in data or not data['timestamp']:
-            data['timestamp'] = datetime.now(UTC).isoformat()
-        super().__init__(**data)
-
-
-class BiasDetection(Model):
-    """Individual bias detection result"""
-    bias_type: BiasType
-    severity: SeverityLevel
-    examples: Optional[List[str]] = None
-    context: str
-    confidence: float
-
-
-class TextBiasReport(Model):
-    """Complete text bias analysis report"""
-    request_id: str
-    agent: str = "text_bias_agent"
-    bias_detected: bool
-    bias_types: Optional[List[BiasDetection]] = None
-    overall_text_score: float
-    recommendations: Optional[List[str]] = None
-    rag_references: Optional[List[str]] = None
-    confidence: float
-    timestamp: str = ""
-
-    def __init__(self, **data):
-        if 'timestamp' not in data or not data['timestamp']:
-            data['timestamp'] = datetime.now(UTC).isoformat()
-        super().__init__(**data)
 
 
 # Initialize Text Bias Agent
@@ -112,73 +78,76 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Text Bias Agent shutting down...")
 
 
-@text_bias_protocol.on_message(model=TextAnalysisRequest, replies=TextBiasReport)
-async def handle_text_analysis(ctx: Context, sender: str, msg: TextAnalysisRequest):
+@text_bias_protocol.on_message(model=EmbeddingPackage, replies={BiasAnalysisComplete, AgentError})
+async def handle_text_analysis(ctx: Context, sender: str, msg: EmbeddingPackage):
     """
     Analyze text content for bias using ASI:ONE LLM and RAG retrieval.
     """
     try:
-        ctx.logger.info(f"📨 Received text analysis request: {msg.request_id}")
+        ctx.logger.info(f"📨 Received content for text analysis: {msg.request_id}")
+        ctx.logger.info(f"   - Has text content: {msg.text_content is not None}")
+        ctx.logger.info(f"   - Has text embedding: {msg.text_embedding is not None}")
+
+        # Check if we have text to analyze
+        if not msg.text_content:
+            ctx.logger.warning(f"⚠️ No text content for request {msg.request_id}")
+            error_msg = AgentError(
+                request_id=msg.request_id,
+                agent_name="text_bias_agent",
+                error_type="no_content",
+                error_message="No text content provided"
+            )
+            await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
+            return
+
         ctx.logger.info(f"📝 Text length: {len(msg.text_content)} characters")
-        
+
         # Step 1: Initial text analysis
         ctx.logger.info(f"🔍 Starting bias detection analysis...")
         initial_analysis = await analyze_text_with_llm(ctx, msg.text_content)
-        
+
         # Step 2: RAG RETRIEVAL - Query ChromaDB for similar patterns
         ctx.logger.info(f"🔎 RAG RETRIEVAL: Querying ChromaDB for similar text patterns...")
         rag_results = await query_bias_knowledge_base(ctx, msg.text_embedding, msg.chromadb_collection_id)
         ctx.logger.info(f"✅ Found {len(rag_results)} similar cases from knowledge base")
-        
+
         # Step 3: Classify and extract bias types
         ctx.logger.info(f"🏷️ Classifying detected bias types...")
-        bias_detections = await classify_and_extract_biases(ctx, initial_analysis, rag_results)
-        
+        bias_instances = await classify_and_extract_biases(ctx, initial_analysis, rag_results)
+
         # Step 4: Calculate overall text bias score
         ctx.logger.info(f"📊 Calculating overall text bias score...")
-        text_score = await calculate_text_score(ctx, bias_detections)
-        
+        text_score = await calculate_text_score(ctx, bias_instances)
+
         # Step 5: Generate recommendations
         ctx.logger.info(f"💡 Generating recommendations...")
-        recommendations = await generate_recommendations(ctx, bias_detections)
-        
+        recommendations = await generate_recommendations(ctx, bias_instances)
+
         # Step 6: Create report
         report = TextBiasReport(
             request_id=msg.request_id,
-            agent="text_bias_agent",
-            bias_detected=len(bias_detections) > 0,
-            bias_types=bias_detections,
+            agent_name="text_bias_agent",
+            bias_detected=len(bias_instances) > 0,
+            bias_instances=bias_instances,
             overall_text_score=text_score,
             recommendations=recommendations,
-            rag_references=[ref["id"] for ref in rag_results],
-            confidence=sum(bd.confidence for bd in bias_detections) / len(bias_detections) if bias_detections else 1.0
+            rag_similar_cases=[ref["id"] for ref in rag_results]
         )
-        
-        ctx.logger.info(f"✅ Analysis complete: Score={text_score:.1f}, Biases detected={len(bias_detections)}")
-        
-        # Step 7: Send report back to sender and to Scoring Agent
-        await ctx.send(sender, report)
-        
-        if SCORING_AGENT_ADDRESS:
-            ctx.logger.info(f"📤 Forwarding report to Scoring Agent: {SCORING_AGENT_ADDRESS}")
-            # await ctx.send(SCORING_AGENT_ADDRESS, report)
-        
-        ctx.logger.info(f"✅ Text analysis for {msg.request_id} completed successfully")
-        
+
+        ctx.logger.info(f"✅ Analysis complete: Score={text_score:.1f}, Issues={len(bias_instances)}")
+
+        # Step 7: Send report to Scoring Agent
+        await send_to_scoring_agent(ctx, msg.request_id, report)
+
     except Exception as e:
-        ctx.logger.error(f"❌ Error analyzing text for {msg.request_id}: {e}")
-        # Send error report
-        error_report = TextBiasReport(
+        ctx.logger.error(f"❌ Error analyzing text: {e}")
+        error_msg = AgentError(
             request_id=msg.request_id,
-            agent="text_bias_agent",
-            bias_detected=False,
-            bias_types=[],
-            overall_text_score=5.0,  # Neutral score on error
-            recommendations=["Error occurred during analysis"],
-            rag_references=[],
-            confidence=0.0
+            agent_name="text_bias_agent",
+            error_type="analysis_error",
+            error_message=str(e)
         )
-        await ctx.send(sender, error_report)
+        await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
 
 
 async def analyze_text_with_llm(ctx: Context, text: str) -> Dict[str, Any]:
@@ -244,35 +213,36 @@ async def classify_and_extract_biases(
     ctx: Context,
     initial_analysis: Dict[str, Any],
     rag_results: List[Dict[str, Any]]
-) -> List[BiasDetection]:
+) -> List[Dict[str, Any]]:
     """
     Classify bias types and extract specific examples.
+    Returns list of bias instance dicts.
     """
     ctx.logger.info(f"🏷️ Classifying bias types...")
-    
-    # Placeholder bias detections
+
+    # Placeholder bias detections using BiasCategory
     detections = [
-        BiasDetection(
-            bias_type=BiasType.GENDER,
-            severity=SeverityLevel.MEDIUM,
+        create_bias_instance_dict(
+            bias_type=BiasCategory.GENDER,
+            severity="medium",
             examples=["rockstars", "guys"],
             context="Uses gendered sports metaphors and male-default language",
             confidence=0.87
         ),
-        BiasDetection(
-            bias_type=BiasType.AGE,
-            severity=SeverityLevel.MEDIUM,
+        create_bias_instance_dict(
+            bias_type=BiasCategory.AGE,
+            severity="medium",
             examples=["young energetic team", "digital natives"],
             context="Implies preference for younger candidates",
             confidence=0.82
         )
     ]
-    
-    ctx.logger.info(f"✅ Classified {len(detections)} bias types")
+
+    ctx.logger.info(f"✅ Classified {len(detections)} bias instances")
     return detections
 
 
-async def calculate_text_score(ctx: Context, detections: List[BiasDetection]) -> float:
+async def calculate_text_score(ctx: Context, detections: List[Dict[str, Any]]) -> float:
     """
     Calculate overall text bias score (0-10 scale).
     
@@ -284,46 +254,90 @@ async def calculate_text_score(ctx: Context, detections: List[BiasDetection]) ->
     """
     if not detections:
         return 9.5  # No bias detected
-    
+
     # Calculate weighted score based on severity
     severity_weights = {
-        SeverityLevel.LOW: 0.5,
-        SeverityLevel.MEDIUM: 1.0,
-        SeverityLevel.HIGH: 1.5,
-        SeverityLevel.CRITICAL: 2.0
+        "low": 0.5,
+        "medium": 1.0,
+        "high": 1.5,
+        "critical": 2.0
     }
-    
-    total_penalty = sum(severity_weights[d.severity] * d.confidence for d in detections)
-    
+
+    total_penalty = sum(severity_weights.get(d.get("severity", "low"), 0.5) * d.get("confidence", 0.5) for d in detections)
+
     # Start from 10 and subtract penalties
     score = max(0.0, 10.0 - total_penalty)
-    
+
     ctx.logger.info(f"📊 Calculated text score: {score:.1f}")
     return score
 
 
-async def generate_recommendations(ctx: Context, detections: List[BiasDetection]) -> List[str]:
+async def generate_recommendations(ctx: Context, detections: List[Dict[str, Any]]) -> List[str]:
     """
     Generate actionable recommendations based on detected biases.
     """
     recommendations = []
-    
+
     for detection in detections:
-        if detection.bias_type == BiasType.GENDER:
+        bias_type = detection.get("bias_type", "")
+
+        if bias_type == "gender_bias":
             recommendations.append("Use gender-neutral language and avoid male-default terminology")
-        elif detection.bias_type == BiasType.AGE:
+        elif bias_type == "age_bias":
             recommendations.append("Remove age-specific references and focus on skills/experience")
-        elif detection.bias_type == BiasType.RACIAL:
+        elif bias_type == "racial_bias":
             recommendations.append("Ensure cultural sensitivity and avoid stereotypes")
-        elif detection.bias_type == BiasType.DISABILITY:
+        elif bias_type == "disability_bias":
             recommendations.append("Use inclusive language that doesn't assume physical abilities")
-        elif detection.bias_type == BiasType.LGBTQ:
+        elif bias_type == "lgbtq_bias":
             recommendations.append("Avoid heteronormative assumptions and use inclusive terminology")
-        elif detection.bias_type == BiasType.SOCIOECONOMIC:
+        elif bias_type == "socioeconomic_bias":
             recommendations.append("Avoid language that assumes specific socioeconomic backgrounds")
-    
+
     ctx.logger.info(f"💡 Generated {len(recommendations)} recommendations")
     return recommendations
+
+
+# ChromaDB instance
+_chroma_db = None
+
+def get_chroma_db():
+    """Get ChromaDB instance"""
+    global _chroma_db
+    if _chroma_db is None:
+        _chroma_db = ChromaDB()
+    return _chroma_db
+
+
+async def send_to_scoring_agent(ctx: Context, request_id: str, report: TextBiasReport):
+    """
+    Send analysis results to Scoring Agent.
+    """
+    if not SCORING_AGENT_ADDRESS:
+        ctx.logger.warning(f"⚠️ Scoring agent address not set")
+        return
+
+    # Convert report to dict
+    report_dict = {
+        "request_id": report.request_id,
+        "agent_name": report.agent_name,
+        "bias_detected": report.bias_detected,
+        "bias_instances": report.bias_instances,
+        "overall_text_score": report.overall_text_score,
+        "recommendations": report.recommendations,
+        "rag_similar_cases": report.rag_similar_cases,
+        "timestamp": report.timestamp
+    }
+
+    analysis_complete = BiasAnalysisComplete(
+        request_id=request_id,
+        sender_agent="text_bias_agent",
+        report=report_dict
+    )
+
+    ctx.logger.info(f"📤 Sending results to Scoring Agent")
+    await ctx.send(SCORING_AGENT_ADDRESS, analysis_complete)
+    ctx.logger.info(f"✅ Results sent successfully")
 
 
 # Include protocol
