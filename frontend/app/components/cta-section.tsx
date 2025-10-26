@@ -1,6 +1,49 @@
 "use client"
 
+import React, { useEffect, useRef } from "react";
+import Image from "next/image";
+
 export default function CTASection() {
+  const logos = [
+    { src: "/claude.png", alt: "Claude" },
+    { src: "/fetchai.png", alt: "Fetch.ai" },
+    { src: "/chroma.png", alt: "Chroma" },
+  ]
+
+  // Duplicate logos 2x for seamless infinite scroll
+  const duplicatedLogos = [...logos, ...logos]
+
+  // rAF-powered marquee for perfectly continuous scrolling without visible resets
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+
+    let raf = 0
+    let lastTimestamp = performance.now()
+    let offsetPx = 0
+
+    // Pixels per second; increase for faster scroll
+    const speedPxPerSec = 260
+
+    const step = (now: number) => {
+      const deltaSec = (now - lastTimestamp) / 1000
+      lastTimestamp = now
+
+      offsetPx += speedPxPerSec * deltaSec
+      const halfWidth = el.scrollWidth / 2 // because content is duplicated exactly twice
+      if (halfWidth > 0) {
+        if (offsetPx >= halfWidth) offsetPx -= halfWidth
+        el.style.transform = `translate3d(${-offsetPx}px, 0, 0)`
+      }
+
+      raf = requestAnimationFrame(step)
+    }
+
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   return (
     <div className="w-full relative overflow-hidden flex flex-col justify-center items-center gap-2">
       {/* Content */}
@@ -32,6 +75,7 @@ export default function CTASection() {
               and ensure every campaign promotes inclusivity and trust.
             </div>
           </div>
+
           <div className="w-full max-w-[497px] flex flex-col justify-center items-center gap-12">
             <div className="flex justify-start items-center gap-4">
               <div className="h-10 px-12 py-[6px] relative bg-[#37322F] shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center cursor-pointer hover:bg-[#2A2520] transition-colors">
@@ -40,6 +84,41 @@ export default function CTASection() {
                   Start for free
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Powered by logos - Infinite scroll */}
+          <div className="w-full overflow-hidden py-6">
+            <div className="flex" ref={trackRef} style={{ willChange: 'transform' }}>
+              {duplicatedLogos.map((logo, i) => (
+                <div
+                  key={i}
+                  className="inline-flex items-center justify-center flex-shrink-0"
+                  style={{ padding: '0 2rem', height: '5rem', width: '12rem' }}
+                >
+                  {logo.src.includes('?') ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={150}
+                      height={80}
+                      className="object-contain"
+                      style={{ maxHeight: '4rem' }}
+                      loading="eager"
+                    />
+                  ) : (
+                    <Image
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={150}
+                      height={80}
+                      className="object-contain"
+                      style={{ maxHeight: '4rem' }}
+                      priority
+                    />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
