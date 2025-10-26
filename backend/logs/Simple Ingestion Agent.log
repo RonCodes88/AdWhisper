@@ -1,0 +1,148 @@
+WARNING:  [simple_ingestion_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║          🚀 Simple Ingestion Agent - AdWhisper               ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: YouTube Content Extraction and Agent Routing
+
+Flow:
+  1. Receive YouTube URL from FastAPI
+  2. Extract transcript + frames with Claude
+  3. Send text → Text Bias Agent
+  4. Send frames → Visual Bias Agent
+  5. Return acknowledgement
+
+Endpoints:
+  • POST /analyze - YouTube ingestion endpoint
+
+Running on: http://localhost:8100
+🛑 Stop with Ctrl+C
+    
+INFO:     [simple_ingestion_agent]: Starting agent with address: agent1q0zhjrm3pw2fhph7cntp49cwm8ee7hgz0u6jaryr7q0j0xa0q9nyvqhndc7
+INFO:     [simple_ingestion_agent]: 🚀 Simple Ingestion Agent started!
+INFO:     [simple_ingestion_agent]: 📍 Agent address: agent1q0zhjrm3pw2fhph7cntp49cwm8ee7hgz0u6jaryr7q0j0xa0q9nyvqhndc7
+INFO:     [simple_ingestion_agent]: 🌐 REST endpoint: http://localhost:8100/analyze
+INFO:     [simple_ingestion_agent]: 🔧 Role: YouTube extraction + routing
+INFO:     [simple_ingestion_agent]: ✅ ANTHROPIC_API_KEY: Configured
+INFO:     [simple_ingestion_agent]: 📤 Text Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [simple_ingestion_agent]: 👁️ Visual Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [simple_ingestion_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8100&address=agent1q0zhjrm3pw2fhph7cntp49cwm8ee7hgz0u6jaryr7q0j0xa0q9nyvqhndc7
+INFO:     [simple_ingestion_agent]: Starting server on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     [simple_ingestion_agent]: Manifest published successfully: simple_ingestion_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
+INFO:     [simple_ingestion_agent]: 📨 REST request received: 1c4588e8-ab94-41bc-abc1-1cfc2b105384
+INFO:     [simple_ingestion_agent]: 🔗 YouTube URL: https://www.youtube.com/watch?v=VCPGMjCW0is
+INFO:     [simple_ingestion_agent]: 🎬 Extracting YouTube content with Claude...
+[youtube] Extracting URL: https://www.youtube.com/watch?v=VCPGMjCW0is
+
+🎬 PROCESSING YOUTUBE VIDEO WITH CLAUDE
+🔗 URL: https://www.youtube.com/watch?v=VCPGMjCW0is
+📺 Video ID: VCPGMjCW0is
+📝 EXTRACTING TRANSCRIPT...
+✅ TRANSCRIPT EXTRACTED:
+   📏 Length: 303 characters
+   📄 Preview: - Why do B2B videos always have
+people in a conference room with generic charts and someone
+writing on a whiteboard? Hey, Lou, what you writing? - I have no idea. - Don't make a normal,
+boring corpora...
+   📄 FULL TRANSCRIPT:
+   ----------------------------------------
+   - Why do B2B videos always have
+people in a conference room with generic charts and someone
+writing on a whiteboard? Hey, Lou, what you writing? - I have no idea. - Don't make a normal,
+boring corporate video. Make a video your prospects
+actually wanna watch. We're Umault, click
+the link to learn more.
+   ----------------------------------------
+📥 DOWNLOADING VIDEO...
+📥 Downloading video with yt-dlp from: https://www.youtube.com/watch?v=VCPGMjCW0is
+[youtube] VCPGMjCW0is: Downloading webpage
+[youtube] VCPGMjCW0is: Downloading android sdkless player API JSON
+[youtube] VCPGMjCW0is: Downloading tv client config
+[youtube] VCPGMjCW0is: Downloading tv player API JSON
+[youtube] VCPGMjCW0is: Downloading web safari player API JSON
+[youtube] VCPGMjCW0is: Downloading player 6e4dbefe-main
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] VCPGMjCW0is: nsig extraction failed: Some formats may be missing
+         n = evoPPijN61xFNWXE ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] VCPGMjCW0is: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] VCPGMjCW0is: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] VCPGMjCW0is: Downloading m3u8 information
+[youtube] Extracting URL: https://www.youtube.com/watch?v=VCPGMjCW0is
+📹 Video: "Corporate" videos are boring – We're Umault, a B2B video marketing agency
+⏱️  Duration: 17s
+[youtube] VCPGMjCW0is: Downloading webpage
+[youtube] VCPGMjCW0is: Downloading android sdkless player API JSON
+[youtube] VCPGMjCW0is: Downloading tv client config
+[youtube] VCPGMjCW0is: Downloading tv player API JSON
+[youtube] VCPGMjCW0is: Downloading web safari player API JSON
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] VCPGMjCW0is: nsig extraction failed: Some formats may be missing
+         n = ttRX5Bx6JkC32pOX ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] VCPGMjCW0is: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] VCPGMjCW0is: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] VCPGMjCW0is: Downloading m3u8 information
+[info] VCPGMjCW0is: Downloading 1 format(s): 95
+[download] Sleeping 6.00 seconds as required by the site...
+[hlsnative] Downloading m3u8 manifest
+[hlsnative] Total fragments: 4
+[download] Destination: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/VCPGMjCW0is.mp4
+[download] 100.0% of ~   1.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  75.0% of ~   4.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  58.3% of ~  12.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  53.6% of ~  28.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  51.7% of ~  60.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  50.8% of ~ 124.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  50.4% of ~ 252.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  50.2% of ~ 508.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  50.1% of ~1020.00KiB at    5.45KiB/s ETA Unknown (frag 0/4)[download]  39.8% of ~   2.00MiB at    2.24MiB/s ETA Unknown (frag 0/4)[download]  12.5% of ~   6.36MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  50.1% of ~   1.59MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  50.1% of ~   1.59MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  50.2% of ~   1.60MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  50.5% of ~   1.60MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  51.0% of ~   1.62MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  51.9% of ~   1.65MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  53.6% of ~   1.71MiB at    2.24MiB/s ETA Unknown (frag 1/4)[download]  56.8% of ~   1.84MiB at    3.51MiB/s ETA Unknown (frag 1/4)[download]  59.2% of ~   2.09MiB at    3.51MiB/s ETA Unknown (frag 1/4)[download]  36.8% of ~   3.36MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  75.1% of ~   1.65MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  75.1% of ~   1.65MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  75.2% of ~   1.65MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  75.5% of ~   1.66MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  75.9% of ~   1.67MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  76.8% of ~   1.69MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  78.6% of ~   1.73MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  81.9% of ~   1.81MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  87.6% of ~   1.98MiB at    3.51MiB/s ETA Unknown (frag 2/4)[download]  90.8% of ~   2.31MiB at    5.35MiB/s ETA Unknown (frag 2/4)[download]  53.1% of ~   3.95MiB at    5.35MiB/s ETA Unknown (frag 3/4)[download] 100.0% of ~   2.10MiB at    5.35MiB/s ETA Unknown (frag 3/4)[download] 100.0% of ~   2.10MiB at    5.35MiB/s ETA Unknown (frag 3/4)[download] 100.0% of ~   2.10MiB at    5.35MiB/s ETA Unknown (frag 3/4)[download]  99.8% of ~   2.11MiB at    5.35MiB/s ETA Unknown (frag 4/4)[download] 100% of    2.10MiB in 00:00:00 at 8.06MiB/s                 
+WARNING: VCPGMjCW0is: Possible MPEG-TS in MP4 container or malformed AAC timestamps. Install ffmpeg to fix this automatically
+[h264 @ 0x130db2bd0] co located POCs unavailable
+[h264 @ 0x130db2bd0] reference picture missing during reorder
+[h264 @ 0x130db2bd0] reference picture missing during reorder
+[h264 @ 0x130db2bd0] Missing reference picture, default is 0
+[h264 @ 0x130db2bd0] Missing reference picture, default is 0
+[h264 @ 0x130dcc330] reference picture missing during reorder
+[h264 @ 0x130dcc330] Missing reference picture, default is 65538
+[h264 @ 0x130db2bd0] co located POCs unavailable
+[h264 @ 0x130dbb270] co located POCs unavailable
+[h264 @ 0x130db2bd0] co located POCs unavailable
+[h264 @ 0x130dbb270] co located POCs unavailable
+[h264 @ 0x130dc3ad0] reference picture missing during reorder
+[h264 @ 0x130dc3ad0] Missing reference picture, default is 2
+[h264 @ 0x130db2bd0] co located POCs unavailable
+[h264 @ 0x130dbb270] co located POCs unavailable
+[h264 @ 0x130db2bd0] co located POCs unavailable
+[h264 @ 0x130dbb270] co located POCs unavailable
+✅ Video downloaded: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/VCPGMjCW0is.mp4
+🎬 EXTRACTING FRAMES EVERY 5 SECONDS...
+🎬 Extracting frames every 5 seconds from video file...
+📊 Video duration: 17s, will extract 3 frames
+📊 Video info: 406 frames, 23.976023976023978 FPS
+📸 Frame 1: 0s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/frame_1_0s.jpg
+📸 Frame 2: 5s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/frame_2_5s.jpg
+📸 Frame 3: 10s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/frame_3_10s.jpg
+✅ Extracted 3 frames from video
+🧠 PROCESSING TRANSCRIPT WITH CLAUDE...
+🧠 Using Claude to analyze transcript for bias...
+❌ Claude API error: 404 - {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"},"request_id":"req_011CUVLW2uRihWm3AuToj1G8"}
+⚠️ Claude transcript analysis failed
+🗑️ Cleaned up video file: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/VCPGMjCW0is.mp4
+✅ PROCESSING COMPLETE!
+   📝 Transcript: 303 chars
+   🎬 Frames: 3 extracted (every 5 seconds)
+   📊 Metadata: "Corporate" videos are boring – We're Umault, a B2B video marketing agency
+   💾 Frame images saved to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames
+==================================================
+INFO:     [simple_ingestion_agent]: ✅ Extraction complete:
+INFO:     [simple_ingestion_agent]:    📝 Transcript: 303 chars
+INFO:     [simple_ingestion_agent]:    🎬 Frames: 3
+INFO:     [simple_ingestion_agent]:    🧠 Claude analysis: ✅
+INFO:     [simple_ingestion_agent]: 📤 Sending text to Text Bias Agent...
+ERROR:    [dispenser]: Failed to deliver message to agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv @ ['http://localhost:8101/submit']: ['400: {"error": "unable to route envelope"}']
+INFO:     [simple_ingestion_agent]: ✅ Text sent to Text Bias Agent
+INFO:     [simple_ingestion_agent]: 📤 Sending 3 frames to Visual Bias Agent...
+ERROR:    [dispenser]: Failed to deliver message to agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933 @ ['http://localhost:8102/submit']: ['400: {"error": "unable to route envelope"}']
+INFO:     [simple_ingestion_agent]: ✅ Frames sent to Visual Bias Agent
+INFO:     [simple_ingestion_agent]: ✅ Request 1c4588e8-ab94-41bc-abc1-1cfc2b105384 processed successfully

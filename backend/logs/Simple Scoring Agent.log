@@ -1,0 +1,40 @@
+WARNING:  [simple_scoring_agent]: Endpoint configuration overrides mailbox setting.
+INFO:chromadb.telemetry.product.posthog:Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+
+╔══════════════════════════════════════════════════════════════╗
+║          🎯 Simple Scoring Agent - AdWhisper                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Result Aggregation & Final Assessment
+ONLY AGENT WITH CHROMADB RAG!
+
+Flow:
+  1. Receive Text Bias Report
+  2. Receive Visual Bias Report
+  3. Wait for BOTH reports
+  4. Query ChromaDB for similar cases (RAG!)
+  5. Calculate weighted final score (50% text, 50% visual)
+  6. Format clean JSON report
+  7. Store in ChromaDB for future reference
+  8. Store result for FastAPI retrieval
+
+Scoring Scale:
+  9-10: Excellent (minimal bias)
+  7-8:  Good (minor concerns)
+  5-6:  Fair (moderate bias)
+  3-4:  Poor (significant bias)
+  0-2:  Critical (severe bias)
+
+Running on: http://localhost:8103
+🛑 Stop with Ctrl+C
+    
+INFO:     [simple_scoring_agent]: Starting agent with address: agent1qgtvf3h05y9crnm24p5tjdq2rttwghza0skfzyqtavf862z27p3jg5vhpqv
+INFO:     [simple_scoring_agent]: 🚀 Simple Scoring Agent started!
+INFO:     [simple_scoring_agent]: 📍 Agent address: agent1qgtvf3h05y9crnm24p5tjdq2rttwghza0skfzyqtavf862z27p3jg5vhpqv
+INFO:     [simple_scoring_agent]: 🔧 Role: Result aggregation & final scoring
+INFO:     [simple_scoring_agent]: 💾 ChromaDB: ENABLED (ONLY RAG point in system)
+INFO:     [simple_scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qgtvf3h05y9crnm24p5tjdq2rttwghza0skfzyqtavf862z27p3jg5vhpqv
+INFO:     [simple_scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
+INFO:     [simple_scoring_agent]: Manifest published successfully: simple_scoring_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!

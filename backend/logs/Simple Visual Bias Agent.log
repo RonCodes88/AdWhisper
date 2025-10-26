@@ -1,0 +1,38 @@
+WARNING:  [simple_visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║          👁️ Simple Visual Bias Agent - AdWhisper            ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Visual Content Bias Analysis (NO ChromaDB)
+
+Flow:
+  1. Receive frames from Ingestion Agent
+  2. Analyze for visual bias (placeholder heuristics)
+  3. Generate diversity metrics
+  4. Create JSON report with score
+  5. Send report to Scoring Agent
+
+Visual Bias Types:
+  • Representation bias (demographic diversity)
+  • Contextual bias (power dynamics, positioning)
+
+Note: This version uses placeholder analysis.
+Production should use:
+  - Claude Vision API for frame analysis
+  - Computer vision models for demographics
+  - Scene understanding for context
+
+Running on: http://localhost:8102
+🛑 Stop with Ctrl+C
+    
+INFO:     [simple_visual_bias_agent]: Starting agent with address: agent1q2pp20x4xcqpq295rz6330dgyrxzee7lnlquy0zvewhjc3gatzv5sfmu3la
+INFO:     [simple_visual_bias_agent]: 🚀 Simple Visual Bias Agent started!
+INFO:     [simple_visual_bias_agent]: 📍 Agent address: agent1q2pp20x4xcqpq295rz6330dgyrxzee7lnlquy0zvewhjc3gatzv5sfmu3la
+INFO:     [simple_visual_bias_agent]: 🔧 Role: Visual content bias analysis
+INFO:     [simple_visual_bias_agent]: 📤 Scoring Agent: agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [simple_visual_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8102&address=agent1q2pp20x4xcqpq295rz6330dgyrxzee7lnlquy0zvewhjc3gatzv5sfmu3la
+INFO:     [simple_visual_bias_agent]: Starting server on http://0.0.0.0:8102 (Press CTRL+C to quit)
+INFO:     [simple_visual_bias_agent]: Manifest published successfully: simple_visual_bias_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!

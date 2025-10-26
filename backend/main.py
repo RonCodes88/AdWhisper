@@ -51,14 +51,13 @@ def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str
     print(f"📝 Request ID: {request_id}")
     print(f"🎯 Endpoint: {INGESTION_AGENT_REST_ENDPOINT}")
     
-    # Convert the payload to match the expected schema exactly
+    # Convert the payload to match the simple_ingestion_agent schema
     try:
-        # Format payload for YouTube ingestion agent
+        # Format payload for simple YouTube ingestion agent
+        # simple_ingestion_agent only needs: request_id, video_url
         formatted_payload = {
             "request_id": ingestion_payload["request_id"],
-            "content_type": ingestion_payload.get("content_type", "video"),
-            "video_url": ingestion_payload.get("video_url"),
-            "metadata": ingestion_payload.get("metadata", {})
+            "video_url": ingestion_payload.get("video_url")
         }
         
         print(f"📦 Payload: {formatted_payload}")
