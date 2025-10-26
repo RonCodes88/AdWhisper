@@ -1,2 +1,8 @@
 __pycache__
 adwhisper
+
+.env
+.chroma_db
+.venv
+
+uploads/

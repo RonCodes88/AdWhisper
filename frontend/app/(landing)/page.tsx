@@ -1,19 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useRef } from "react"
-import CTASection from "../components/cta-section"
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import CTASection from "../components/cta-section";
 
 function Badge({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="px-[14px] py-[6px] bg-white shadow-[0px_0px_0px_4px_rgba(55,50,47,0.05)] overflow-hidden rounded-[90px] flex justify-start items-center gap-[8px] border border-accent/20 shadow-xs">
-      <div className="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">{icon}</div>
+      <div className="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">
+        {icon}
+      </div>
       <div className="text-center flex justify-center flex-col text-foreground text-xs font-medium leading-3 font-sans">
         {text}
       </div>
     </div>
-  )
+  );
 }
 
 function FeatureCard({
@@ -23,11 +26,11 @@ function FeatureCard({
   progress,
   onClick,
 }: {
-  title: string
-  description: string
-  isActive: boolean
-  progress: number
-  onClick: () => void
+  title: string;
+  description: string;
+  isActive: boolean;
+  progress: number;
+  onClick: () => void;
 }) {
   return (
     <div
@@ -40,7 +43,10 @@ function FeatureCard({
     >
       {isActive && (
         <div className="absolute top-0 left-0 w-full h-0.5 bg-muted">
-          <div className="h-full bg-accent transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full bg-accent transition-all duration-100 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
 
@@ -51,49 +57,49 @@ function FeatureCard({
         {description}
       </div>
     </div>
-  )
+  );
 }
 
 export default function LandingPage() {
-  const [activeCard, setActiveCard] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const mountedRef = useRef(true)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [activeCard, setActiveCard] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const mountedRef = useRef(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Reset mounted ref when component mounts
-    mountedRef.current = true
-    
+    mountedRef.current = true;
+
     const progressInterval = setInterval(() => {
-      if (!mountedRef.current) return
+      if (!mountedRef.current) return;
 
       setProgress((prev) => {
         if (prev >= 100) {
           if (mountedRef.current) {
-            setActiveCard((current) => (current + 1) % 3)
+            setActiveCard((current) => (current + 1) % 3);
           }
-          return 0
+          return 0;
         }
-        return prev + 2
-      })
-    }, 100)
-    
-    intervalRef.current = progressInterval
+        return prev + 2;
+      });
+    }, 100);
+
+    intervalRef.current = progressInterval;
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      mountedRef.current = false
-    }
-  }, [])
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleCardClick = (index: number) => {
-    if (!mountedRef.current) return
-    setActiveCard(index)
-    setProgress(0)
-  }
+    if (!mountedRef.current) return;
+    setActiveCard(index);
+    setProgress(0);
+  };
 
   return (
     <div className="w-full min-h-screen relative bg-background overflow-x-hidden flex flex-col justify-start items-center">
@@ -103,7 +109,6 @@ export default function LandingPage() {
           <div className="h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0"></div>
 
           <div className="self-stretch pt-[9px] overflow-hidden border-b border-border flex flex-col justify-center items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[66px] relative z-10">
-
             {/* Hero Section */}
             <div className="pt-16 sm:pt-20 md:pt-24 lg:pt-[216px] pb-8 sm:pb-12 md:pb-16 flex flex-col justify-start items-center px-2 sm:px-4 md:px-8 lg:px-0 w-full sm:pl-0 sm:pr-0 pl-0 pr-0">
               <div className="w-full max-w-[937px] lg:w-[937px] flex flex-col justify-center items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6">
@@ -114,21 +119,26 @@ export default function LandingPage() {
                     before they go live
                   </div>
                   <div className="w-full max-w-[506.08px] lg:w-[506.08px] text-center flex justify-center flex-col text-muted-foreground sm:text-lg md:text-xl leading-[1.4] sm:leading-[1.45] md:leading-[1.5] lg:leading-7 font-sans px-2 sm:px-4 md:px-0 lg:text-lg font-medium text-sm">
-                    AI-powered multi-agent system that scans ad scripts and visuals
+                    AI-powered multi-agent system that scans ad scripts and
+                    visuals
                     <br className="hidden sm:block" />
-                    for subconscious bias, suggests inclusive rewrites, and delivers audit reports.
+                    for subconscious bias, suggests inclusive rewrites, and
+                    delivers audit reports.
                   </div>
                 </div>
               </div>
 
               <div className="w-full max-w-[497px] lg:w-[497px] flex flex-col justify-center items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 relative z-10 mt-6 sm:mt-8 md:mt-10 lg:mt-12">
                 <div className="backdrop-blur-[8.25px] flex justify-start items-center gap-4">
-                  <div className="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center">
-                    <div className="w-20 sm:w-24 md:w-28 lg:w-44 h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"></div>
+                  <Link
+                    href="/upload"
+                    className="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center hover:bg-primary/90 transition-colors cursor-pointer"
+                  >
+                    <div className="w-20 sm:w-24 md:w-28 lg:w-44 h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"></div>
                     <div className="flex flex-col justify-center text-primary-foreground text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans">
                       Try for free
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
 
@@ -150,7 +160,9 @@ export default function LandingPage() {
                       <div className="relative w-full h-full overflow-hidden">
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 0 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 0
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -162,7 +174,9 @@ export default function LandingPage() {
 
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 1 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 1
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -174,7 +188,9 @@ export default function LandingPage() {
 
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 2 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 2
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -243,5 +259,5 @@ export default function LandingPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

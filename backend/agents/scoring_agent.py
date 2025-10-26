@@ -16,6 +16,13 @@ from pydantic import Field
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
 from enum import Enum
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from chroma import ChromaDB
 
 
 # Message Models (importing from other agents)
@@ -123,21 +130,41 @@ class ScoringRequest(Model):
         super().__init__(**data)
 
 
+# REST API Models
+class RESTAgentReport(Model):
+    """REST API model for receiving agent reports"""
+    source: str  # "text_bias_agent" or "visual_bias_agent"
+    report: Dict[str, Any]
+
+
+class RESTAcknowledgement(Model):
+    """REST API acknowledgement"""
+    status: str
+    message: str
+
+
+# In-memory storage for collecting reports (replace with proper state management)
+pending_reports = {}  # {request_id: {"text": {...}, "visual": {...}}}
+
+
 # Initialize Scoring Agent
 scoring_agent = Agent(
     name="scoring_agent",
     seed="ad_bias_scoring_agent_unique_seed_2024",
     port=8103,
     endpoint=["http://localhost:8103/submit"],
-    mailbox=True  # Enable for Agentverse integration
+    mailbox=False  # Local development - direct agent-to-agent communication
 )
 
 # Protocol for scoring and aggregation
 scoring_protocol = Protocol(name="scoring_protocol", version="1.0")
 
+# Global ChromaDB instance
+chroma_db = None
+
 # ASI:ONE LLM agent addresses
-OPENAI_AGENT = 'agent1q0h70caed8ax769shpemapzkyk65uscw4xwk6dc4t3emvp5jdcvqs9xs32y'
-CLAUDE_AGENT = 'agent1qvk7q2av3e2y5gf5s90nfzkc8a48q3wdqeevwrtgqfdl0k78rspd6f2l4dx'
+OPENAI_AGENT = os.getenv('ASI_OPENAI_AGENT', 'agent1q0h70caed8ax769shpemapzkyk65uscw4xwk6dc4t3emvp5jdcvqs9xs32y')
+CLAUDE_AGENT = os.getenv('ASI_CLAUDE_AGENT', 'agent1qvk7q2av3e2y5gf5s90nfzkc8a48q3wdqeevwrtgqfdl0k78rspd6f2l4dx')
 
 # Scoring weights (configurable)
 SCORING_WEIGHTS = {
@@ -149,8 +176,16 @@ SCORING_WEIGHTS = {
 
 @scoring_agent.on_event("startup")
 async def startup(ctx: Context):
-    ctx.logger.info(f"🚀 Scoring Agent started successfully!")
+    global chroma_db
+    
+    ctx.logger.info(f"🚀 Scoring Agent starting up...")
     ctx.logger.info(f"📍 Agent address: {scoring_agent.address}")
+    
+    # Initialize ChromaDB
+    ctx.logger.info("💾 Initializing ChromaDB...")
+    chroma_db = ChromaDB()
+    ctx.logger.info(f"✅ ChromaDB initialized")
+    
     ctx.logger.info(f"🔧 Role: Result Aggregation and Final Bias Assessment")
     ctx.logger.info(f"🌐 Endpoint: http://localhost:8103/submit")
     ctx.logger.info(f"⚖️ Scoring Weights: Text={SCORING_WEIGHTS['text_weight']}, Visual={SCORING_WEIGHTS['visual_weight']}, Intersectional={SCORING_WEIGHTS['intersectional_weight']}")
@@ -160,6 +195,134 @@ async def startup(ctx: Context):
 @scoring_agent.on_event("shutdown")
 async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Scoring Agent shutting down...")
+
+
+@scoring_agent.on_rest_post("/api/aggregate", RESTAgentReport, RESTAcknowledgement)
+async def handle_rest_aggregate(ctx: Context, req: RESTAgentReport) -> RESTAcknowledgement:
+    """REST endpoint to receive reports from Text/Visual agents."""
+    ctx.logger.info(f"🌐 REST API: Received report from {req.source}")
+    
+    try:
+        report_data = req.report
+        request_id = report_data.get("request_id")
+        
+        # Store report
+        if request_id not in pending_reports:
+            pending_reports[request_id] = {}
+        
+        if req.source == "text_bias_agent":
+            pending_reports[request_id]["text"] = report_data
+        elif req.source == "visual_bias_agent":
+            pending_reports[request_id]["visual"] = report_data
+        
+        ctx.logger.info(f"📊 Stored {req.source} report for request {request_id}")
+        
+        # Check if we have both reports (or just one for single-modality)
+        reports = pending_reports[request_id]
+        should_process = False
+        
+        # Determine if ready to process
+        if "text" in reports and "visual" in reports:
+            should_process = True
+        elif "text" in reports and not reports.get("visual"):
+            # Text-only analysis, wait a bit then process
+            should_process = True
+        elif "visual" in reports and not reports.get("text"):
+            # Visual-only analysis
+            should_process = True
+        
+        if should_process:
+            ctx.logger.info(f"✅ All reports collected, processing final scoring...")
+            await process_and_send_final_report(ctx, request_id, reports)
+        
+        return RESTAcknowledgement(
+            status="accepted",
+            message=f"Report from {req.source} received"
+        )
+    except Exception as e:
+        ctx.logger.error(f"❌ Error: {e}")
+        return RESTAcknowledgement(status="error", message=str(e))
+
+
+async def process_and_send_final_report(ctx: Context, request_id: str, reports: Dict[str, Any]):
+    """Process final scoring and send to backend."""
+    try:
+        # Generate final report using existing logic
+        text_report = reports.get("text", {})
+        visual_report = reports.get("visual", {})
+        
+        # Extract scores
+        text_score = text_report.get("overall_text_score", 5.0)
+        visual_score = visual_report.get("overall_visual_score", 5.0)
+        
+        # RAG benchmarking
+        benchmark_cases = await query_case_benchmarks(ctx, text_score, visual_score, "default")
+        
+        # Intersectional bias
+        intersectional_penalty = await detect_intersectional_bias(ctx, text_report, visual_report)
+        
+        # Calculate final score
+        final_score = await calculate_weighted_score(ctx, text_score, visual_score, intersectional_penalty, SCORING_WEIGHTS)
+        
+        # Aggregate issues
+        bias_issues = await aggregate_bias_issues(ctx, text_report, visual_report)
+        severity_counts = categorize_by_severity(bias_issues)
+        top_concerns = extract_top_concerns(bias_issues, 5)
+        recommendations = await generate_comprehensive_recommendations(ctx, bias_issues, final_score)
+        assessment = generate_assessment_text(final_score, len(bias_issues), severity_counts)
+        
+        # Create final report
+        final_report = {
+            "request_id": request_id,
+            "overall_score": final_score,
+            "assessment": assessment,
+            "score_breakdown": {
+                "text_score": text_score,
+                "visual_score": visual_score,
+                "intersectional_penalty": intersectional_penalty,
+                "weighted_score": final_score
+            },
+            "total_issues": len(bias_issues),
+            "high_severity_count": severity_counts["high"],
+            "medium_severity_count": severity_counts["medium"],
+            "low_severity_count": severity_counts["low"],
+            "bias_issues": [issue.dict() for issue in bias_issues],
+            "top_concerns": top_concerns,
+            "recommendations": [rec.dict() for rec in recommendations],
+            "similar_cases": [case["id"] for case in benchmark_cases],
+            "confidence": calculate_overall_confidence(text_report, visual_report),
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+        
+        # Send to backend
+        await send_final_report_to_backend(ctx, final_report)
+        
+        # Clean up
+        del pending_reports[request_id]
+        
+    except Exception as e:
+        ctx.logger.error(f"❌ Error in final scoring: {e}")
+
+
+async def send_final_report_to_backend(ctx: Context, final_report: Dict[str, Any]):
+    """POST final report to backend callback endpoint."""
+    try:
+        import httpx
+        ctx.logger.info(f"📤 Sending final report to backend...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "http://localhost:8000/api/results/callback",
+                json=final_report
+            )
+            
+            if response.status_code == 200:
+                ctx.logger.info(f"✅ Final report delivered to backend")
+            else:
+                ctx.logger.error(f"❌ Backend returned {response.status_code}")
+                
+    except Exception as e:
+        ctx.logger.error(f"❌ Error sending to backend: {e}")
 
 
 @scoring_protocol.on_message(model=ScoringRequest, replies=FinalBiasReport)
@@ -296,36 +459,65 @@ async def query_case_benchmarks(
 ) -> List[Dict[str, Any]]:
     """
     RAG RETRIEVAL POINT #3: Query ChromaDB for similar complete case studies.
-    
-    TODO: Implement actual ChromaDB query
-    - Query case_studies collection
-    - Filter by similar score ranges
-    - Return benchmark data for comparison
+    Filters by similar score ranges for benchmarking.
     """
-    ctx.logger.info(f"🔎 Querying ChromaDB for benchmark cases...")
+    global chroma_db
     
-    # Placeholder benchmark cases
-    benchmark_cases = [
-        {
-            "id": "case_complete_123",
-            "score": 5.5,
-            "text_score": 6.0,
-            "visual_score": 5.0,
-            "similarity": 0.89,
-            "context": "Similar tech recruitment ad with representation issues"
-        },
-        {
-            "id": "case_complete_456",
-            "score": 4.8,
-            "text_score": 6.5,
-            "visual_score": 3.1,
-            "similarity": 0.83,
-            "context": "Financial services ad with gender bias"
-        }
-    ]
+    if chroma_db is None:
+        ctx.logger.warning("⚠️ ChromaDB not available for benchmarking")
+        return []
     
-    ctx.logger.info(f"✅ Retrieved {len(benchmark_cases)} benchmark cases")
-    return benchmark_cases
+    try:
+        ctx.logger.info(f"🔎 RAG: Querying ChromaDB for benchmark case studies...")
+        
+        # Calculate average score for filtering
+        avg_score = (text_score + visual_score) / 2
+        score_range = 2.0  # Look for cases within ±2 points
+        
+        # Query case studies collection with metadata filtering
+        # Note: ChromaDB metadata filtering has limitations, so we'll filter post-query
+        results = chroma_db.query_by_metadata(
+            collection_name=ChromaDB.COLLECTION_CASE_STUDIES,
+            filters={},  # Get all, then filter by score
+            n_results=20  # Get more to filter
+        )
+        
+        # Parse and filter results
+        benchmark_cases = []
+        if results and 'ids' in results and len(results['ids']) > 0:
+            ids = results['ids']
+            metadatas = results['metadatas'] if 'metadatas' in results else []
+            
+            for i, case_id in enumerate(ids):
+                metadata = metadatas[i] if i < len(metadatas) else {}
+                case_score = float(metadata.get("final_score", 5.0))
+                
+                # Filter by score range
+                if abs(case_score - avg_score) <= score_range:
+                    # Calculate similarity based on score difference
+                    score_diff = abs(case_score - avg_score)
+                    similarity = 1.0 - (score_diff / score_range)
+                    
+                    benchmark_cases.append({
+                        "id": case_id,
+                        "score": case_score,
+                        "text_score": 0.0,  # Not stored separately in metadata
+                        "visual_score": 0.0,
+                        "similarity": similarity,
+                        "context": f"Historical case with score {case_score:.1f}",
+                        "bias_types": metadata.get("bias_types", "").split(",") if metadata.get("bias_types") else []
+                    })
+            
+            # Sort by similarity
+            benchmark_cases.sort(key=lambda x: x["similarity"], reverse=True)
+            benchmark_cases = benchmark_cases[:5]  # Top 5
+        
+        ctx.logger.info(f"✅ RAG: Retrieved {len(benchmark_cases)} benchmark cases")
+        return benchmark_cases
+        
+    except Exception as e:
+        ctx.logger.error(f"❌ Error in RAG benchmarking: {e}")
+        return []
 
 
 async def detect_intersectional_bias(
@@ -405,9 +597,19 @@ async def aggregate_bias_issues(
     # Aggregate text biases
     if "bias_types" in text_report:
         for bias in text_report["bias_types"]:
+            # Extract bias_type (could be enum string or dict)
+            bias_type_value = bias.get("bias_type", bias.get("type", "unknown"))
+            if isinstance(bias_type_value, dict):
+                bias_type_value = bias_type_value.get("value", "unknown")
+            
+            # Extract severity (could be enum string or dict)
+            severity_value = bias.get("severity", "low")
+            if isinstance(severity_value, dict):
+                severity_value = severity_value.get("value", "low")
+            
             issue = BiasIssue(
-                category=bias.get("type", "unknown"),
-                severity=SeverityLevel(bias.get("severity", "low")),
+                category=str(bias_type_value),
+                severity=SeverityLevel(severity_value),
                 source="text_bias_agent",
                 description=bias.get("context", ""),
                 examples=bias.get("examples", []),
@@ -418,9 +620,19 @@ async def aggregate_bias_issues(
     # Aggregate visual biases
     if "bias_types" in visual_report:
         for bias in visual_report["bias_types"]:
+            # Extract bias_type (could be enum string or dict)
+            bias_type_value = bias.get("bias_type", bias.get("type", "unknown"))
+            if isinstance(bias_type_value, dict):
+                bias_type_value = bias_type_value.get("value", "unknown")
+            
+            # Extract severity (could be enum string or dict)
+            severity_value = bias.get("severity", "low")
+            if isinstance(severity_value, dict):
+                severity_value = severity_value.get("value", "low")
+            
             issue = BiasIssue(
-                category=bias.get("type", "unknown"),
-                severity=SeverityLevel(bias.get("severity", "low")),
+                category=str(bias_type_value),
+                severity=SeverityLevel(severity_value),
                 source="visual_bias_agent",
                 description=bias.get("context", ""),
                 examples=bias.get("examples", []),
@@ -586,15 +798,48 @@ def calculate_overall_confidence(text_report: Dict[str, Any], visual_report: Dic
 async def store_final_report_in_chromadb(ctx: Context, report: FinalBiasReport):
     """
     Store final report in ChromaDB for future RAG retrieval and learning.
-    
-    TODO: Implement actual ChromaDB storage
-    - Store in case_studies collection
-    - Include metadata for filtering
+    Stores in case_studies collection for benchmarking.
     """
-    ctx.logger.info(f"💾 Storing final report in ChromaDB for future learning...")
+    global chroma_db
     
-    # Placeholder storage
-    ctx.logger.info(f"✅ Report stored in ChromaDB")
+    if chroma_db is None:
+        ctx.logger.warning("⚠️ ChromaDB not available for storing report")
+        return
+    
+    try:
+        ctx.logger.info(f"💾 Storing final report in ChromaDB for future learning...")
+        
+        # Create a combined embedding placeholder (would need actual embeddings from ad_content)
+        # For now, we'll create a simple embedding based on the score
+        # In production, retrieve the original combined embedding from ad_content collection
+        combined_embedding = [float(report.overall_bias_score / 10.0)] * 896  # 384 text + 512 visual
+        
+        # Extract bias types
+        bias_types = [issue.category for issue in report.bias_issues] if report.bias_issues else []
+        
+        # Extract recommendations
+        recommendations = [rec.action for rec in report.recommendations] if report.recommendations else []
+        
+        # Store in case_studies collection
+        chroma_db.store_case_study(
+            case_id=report.request_id,
+            combined_embedding=combined_embedding,
+            final_score=report.overall_bias_score,
+            bias_types=bias_types,
+            recommendations=recommendations,
+            metadata={
+                "assessment": report.assessment,
+                "total_issues": report.total_issues,
+                "high_severity_count": report.high_severity_count,
+                "confidence": report.confidence,
+                "processing_time_ms": report.processing_time_ms
+            }
+        )
+        
+        ctx.logger.info(f"✅ Report stored in ChromaDB case_studies collection")
+        
+    except Exception as e:
+        ctx.logger.error(f"❌ Error storing report in ChromaDB: {e}")
 
 
 # Include protocol
