@@ -1,6 +1,18 @@
 "use client"
 
+import React from "react";
+import Image from "next/image";
+
 export default function CTASection() {
+  const logos = [
+    { src: "/claude.png", alt: "Claude" },
+    { src: "/fetchai.png", alt: "Fetch.ai" },
+    { src: "/chroma.png", alt: "Chroma" },
+  ]
+
+  // Duplicate logos array for seamless infinite scroll
+  const duplicatedLogos = [...logos, ...logos, ...logos, ...logos]
+
   return (
     <div className="w-full relative overflow-hidden flex flex-col justify-center items-center gap-2">
       {/* Content */}
@@ -32,6 +44,7 @@ export default function CTASection() {
               and ensure every campaign promotes inclusivity and trust.
             </div>
           </div>
+
           <div className="w-full max-w-[497px] flex flex-col justify-center items-center gap-12">
             <div className="flex justify-start items-center gap-4">
               <div className="h-10 px-12 py-[6px] relative bg-[#37322F] shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center cursor-pointer hover:bg-[#2A2520] transition-colors">
@@ -40,6 +53,28 @@ export default function CTASection() {
                   Start for free
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Powered by logos - Infinite scroll */}
+          <div className="w-full overflow-hidden py-6">
+            <div className="animate-scroll" style={{ display: 'flex', whiteSpace: 'nowrap' }}>
+              {duplicatedLogos.map((logo, i) => (
+                <div
+                  key={i}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 2rem', height: '5rem', width: '12rem', flexShrink: 0 }}
+                >
+                  <Image
+                    src={logo.src}
+                    alt={logo.alt}
+                    width={150}
+                    height={80}
+                    className="object-contain"
+                    style={{ maxHeight: '4rem' }}
+                    priority
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
