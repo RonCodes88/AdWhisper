@@ -651,10 +651,7 @@ async def route_to_analysis_agents(
     ctx.logger.info("=" * 80)
     if routed_count > 0:
         ctx.logger.info(f"✅✅✅ Successfully routed content to {routed_count} analysis agent(s) via REST")
-        ctx.logger.info(f"   ℹ️  Agents will:")
-        ctx.logger.info(f"      1. Analyze content for bias")
-        ctx.logger.info(f"      2. Send results to Scoring Agent")
-        ctx.logger.info(f"      3. Return analysis to this agent")
+        ctx.logger.info(f"   ℹ️  Text Bias Agent will trigger Scoring Agent after both analyses complete")
     else:
         ctx.logger.error(f"❌❌❌ ROUTING FAILED - No content was routed to any agents!")
         ctx.logger.error(f"   - Text content available: {embedding_package.text_content is not None}")
@@ -745,12 +742,14 @@ if __name__ == "__main__":
 
 Role: Content Extraction and Agent Routing
 
-Architecture Flow:
+Architecture Flow (REST-based):
   1. Receive ad content via REST API
   2. Extract YouTube content (transcript + Claude-selected frames)
-  3. Route to Text Bias Agent (for text analysis)
-  4. Route to Visual Bias Agent (for visual analysis)
-  5. Agents send results to Scoring Agent
+  3. Route to Text Bias Agent (for text analysis) via HTTP POST
+  4. Route to Visual Bias Agent (for visual analysis) via HTTP POST
+  5. Text Bias Agent triggers Scoring Agent via HTTP POST
+  6. Scoring Agent fetches reports from Text/Visual agents via HTTP GET
+  7. Frontend retrieves final report from Scoring Agent via HTTP GET
 
 Capabilities:
   ✓ Extracts YouTube transcripts and video frames

@@ -872,6 +872,7 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackag
                             "severity": bias.get("severity", "medium"),
                             "examples": bias.get("evidence", []),
                             "context": bias.get("description", ""),
+                            "impact": f"This visual bias affects {', '.join(bias.get('affected_groups', ['certain groups']))} and may perpetuate harmful stereotypes or exclusionary practices.",
                             "confidence": 0.8
                         })
             
@@ -965,6 +966,22 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackag
             }, indent=2))
             ctx.logger.info("=" * 80)
             
+            # CRITICAL FIX: Store report for Scoring Agent retrieval via REST GET
+            report_dict = {
+                "request_id": report.request_id,
+                "agent_name": report.agent_name,
+                "bias_detected": report.bias_detected,
+                "bias_instances": report.bias_instances,
+                "overall_visual_score": report.overall_visual_score,
+                "diversity_metrics": report.diversity_metrics,
+                "recommendations": report.recommendations,
+                "timestamp": report.timestamp
+            }
+            report_key = f"visual_report_{msg.request_id}"
+            ctx.storage.set(report_key, report_dict)
+            ctx.logger.info(f"💾 Visual report stored with key: {report_key}")
+            ctx.logger.info(f"🌐 Scoring Agent can retrieve via: GET /report/{msg.request_id}")
+            
             return report
             
         except Exception as e:
@@ -1008,6 +1025,44 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackag
         )
 
 
+@visual_bias_agent.on_rest_get("/report/{request_id}", BiasAnalysisComplete)
+async def get_visual_report(ctx: Context, request_id: str) -> BiasAnalysisComplete:
+    """
+    REST GET endpoint for Scoring Agent to retrieve stored visual bias report.
+    
+    Usage: GET http://localhost:8102/report/{request_id}
+    """
+    ctx.logger.info(f"📨 REST GET request for report: {request_id}")
+    
+    # Retrieve from storage
+    report_key = f"visual_report_{request_id}"
+    report_data = ctx.storage.get(report_key)
+    
+    if report_data:
+        ctx.logger.info(f"✅ Visual bias report found and returned")
+        # Convert dict back to BiasAnalysisComplete
+        return BiasAnalysisComplete(
+            request_id=request_id,
+            sender_agent="visual_bias_agent",
+            report=report_data
+        )
+    else:
+        ctx.logger.warning(f"⚠️ Visual bias report not found for request_id: {request_id}")
+        # Return a "not found" response
+        return BiasAnalysisComplete(
+            request_id=request_id,
+            sender_agent="visual_bias_agent",
+            report={
+                "request_id": request_id,
+                "agent_name": "visual_bias_agent",
+                "error": "Report not found. Analysis may still be in progress or request_id is invalid.",
+                "bias_detected": False,
+                "overall_visual_score": 0.0,
+                "recommendations": []
+            }
+        )
+
+
 @visual_bias_agent.on_rest_post("/analyze", EmbeddingPackage, BiasAnalysisComplete)
 async def handle_visual_analysis_rest(ctx: Context, request: EmbeddingPackage):
     """
@@ -1018,21 +1073,30 @@ async def handle_visual_analysis_rest(ctx: Context, request: EmbeddingPackage):
     # Process the analysis using the same handler
     result = await handle_visual_analysis(ctx, "rest_client", request)
     
+    # Create report dict for storage and response
+    report_dict = {
+        "request_id": result.request_id,
+        "agent_name": result.agent_name,
+        "bias_detected": result.bias_detected,
+        "bias_instances": result.bias_instances,
+        "overall_visual_score": result.overall_visual_score,
+        "diversity_metrics": result.diversity_metrics,
+        "recommendations": result.recommendations,
+        "claude_analysis": getattr(result, 'claude_analysis', {}),
+        "timestamp": result.timestamp
+    }
+    
+    # Store report for Scoring Agent retrieval
+    report_key = f"visual_report_{request.request_id}"
+    ctx.storage.set(report_key, report_dict)
+    ctx.logger.info(f"💾 Visual report stored with key: {report_key}")
+    ctx.logger.info(f"🌐 Scoring Agent can retrieve via: GET /report/{request.request_id}")
+    
     # Convert to BiasAnalysisComplete format
     return BiasAnalysisComplete(
         request_id=request.request_id,
         sender_agent="visual_bias_agent",
-        report={
-            "request_id": result.request_id,
-            "agent_name": result.agent_name,
-            "bias_detected": result.bias_detected,
-            "bias_instances": result.bias_instances,
-            "overall_visual_score": result.overall_visual_score,
-            "diversity_metrics": result.diversity_metrics,
-            "recommendations": result.recommendations,
-            "claude_analysis": getattr(result, 'claude_analysis', {}),
-            "timestamp": result.timestamp
-        }
+        report=report_dict
     )
 
 

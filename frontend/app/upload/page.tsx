@@ -2,16 +2,107 @@
 
 import { useState } from "react"
 
+interface BiasIssue {
+  category: string
+  severity: string
+  source: string
+  description: string
+  impact: string
+  examples: string[]
+  confidence: number
+}
+
+interface Recommendation {
+  priority: string
+  category: string
+  action: string
+  impact: string
+}
+
+interface BiasAnalysisReport {
+  request_id: string
+  content_url?: string
+  content_type?: string
+  overall_bias_score: number
+  bias_level: string
+  assessment: string
+  score_breakdown: {
+    text_score: number
+    visual_score: number
+    intersectional_penalty: number
+    weighted_score: number
+  }
+  text_analysis_status: string
+  visual_analysis_status: string
+  total_issues: number
+  critical_severity_count: number
+  high_severity_count: number
+  medium_severity_count: number
+  low_severity_count: number
+  bias_issues?: BiasIssue[]
+  top_concerns?: string[]
+  recommendations?: Recommendation[]
+  confidence: number
+  processing_time_ms: number
+  timestamp: string
+}
+
 export default function UploadPage() {
   const [youtubeUrl, setYoutubeUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [analysisResult, setAnalysisResult] = useState<BiasAnalysisReport | null>(null)
   const [error, setError] = useState("")
+  const [requestId, setRequestId] = useState<string | null>(null)
+
+  // Poll scoring agent for final report
+  const pollForReport = async (reqId: string, maxAttempts = 30): Promise<BiasAnalysisReport> => {
+    console.log(`🔄 Starting to poll for report: ${reqId}`)
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      console.log(`   Attempt ${attempt + 1}/${maxAttempts}`)
+      
+      try {
+        const response = await fetch(`http://localhost:8103/report/${reqId}`)
+        
+        if (!response.ok) {
+          console.log(`   ❌ Failed to fetch report: ${response.status}`)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          continue
+        }
+        
+        const report: BiasAnalysisReport = await response.json()
+        console.log("   📊 Report received:", report)
+        
+        // Check if both analyses are complete
+        if (report.text_analysis_status === "completed" && 
+            report.visual_analysis_status === "completed") {
+          console.log("   ✅ Analysis complete!")
+          return report
+        }
+        
+        // Check for errors
+        if (report.text_analysis_status === "error" || 
+            report.visual_analysis_status === "error") {
+          throw new Error("Analysis failed")
+        }
+        
+        console.log("   ⏳ Analysis in progress, waiting...")
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+      } catch (err) {
+        console.log(`   ⚠️ Error polling: ${err}`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+    
+    throw new Error("Analysis timeout - please try again")
+  }
 
   const handleYoutubeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setAnalysisResult(null)
+    setRequestId(null)
 
     console.log("========================================")
     console.log("🎬 YouTube Analysis Submission Started")
@@ -34,7 +125,7 @@ export default function UploadPage() {
       const apiUrl = "http://localhost:8000/api/analyze-youtube"
       const payload = { youtube_url: youtubeUrl }
       
-      console.log("\n📤 Sending request to backend:")
+      console.log("\n📤 Sending request to ingestion agent:")
       console.log("   URL:", apiUrl)
       console.log("   Method: POST")
       console.log("   Payload:", payload)
@@ -60,7 +151,7 @@ export default function UploadPage() {
         console.log("❌ Response not OK")
         const errorText = await response.text()
         console.log("   Error body:", errorText)
-        throw new Error(`Failed to analyze video (${response.status})`)
+        throw new Error(`Failed to submit video (${response.status})`)
       }
 
       console.log("📦 Parsing JSON response...")
@@ -68,8 +159,21 @@ export default function UploadPage() {
       console.log("✅ Response parsed successfully:")
       console.log(result)
       
-      setAnalysisResult(result)
-      console.log("✅ Analysis result set in state")
+      // Extract request_id from response
+      const reqId = result.request_id
+      if (!reqId) {
+        throw new Error("No request_id received from server")
+      }
+      
+      console.log(`✅ Request ID: ${reqId}`)
+      setRequestId(reqId)
+      
+      // Start polling for the final report
+      console.log("\n🔄 Polling scoring agent for final report...")
+      const finalReport = await pollForReport(reqId)
+      
+      setAnalysisResult(finalReport)
+      console.log("✅ Final analysis result set in state")
       console.log("========================================\n")
       
     } catch (err) {
@@ -84,7 +188,7 @@ export default function UploadPage() {
       
       // Check if it's a network error
       if (err instanceof TypeError && err.message.includes("fetch")) {
-        setError("Cannot connect to backend server. Make sure it's running on http://localhost:8000")
+        setError("Cannot connect to backend server. Make sure agents are running (ports 8000, 8103)")
       }
     } finally {
       console.log("🔄 Cleaning up - setting loading to false")
@@ -196,23 +300,23 @@ export default function UploadPage() {
 
               {/* Analysis Results Section */}
               {analysisResult && (
-                <div className="w-full max-w-[800px] mt-8 sm:mt-10">
+                <div className="w-full max-w-[900px] mt-8 sm:mt-10">
                   <div className="bg-white shadow-[0px_0px_0px_0.75px_rgba(0,0,0,0.08)] overflow-hidden rounded-[6px] border border-border/50">
                     
                     {/* Overall Score Header */}
                     <div className="px-6 sm:px-8 py-6 border-b border-border bg-gradient-to-b from-background/50 to-background">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-foreground text-2xl sm:text-3xl font-bold font-serif mb-1">Bias Analysis</h2>
-                          <p className="text-muted-foreground text-sm font-sans">{analysisResult.video_title || analysisResult.youtube_url}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h2 className="text-foreground text-2xl sm:text-3xl font-bold font-serif mb-2">Bias Analysis</h2>
+                          <p className="text-muted-foreground text-sm font-sans break-all">{analysisResult.content_url || youtubeUrl}</p>
                         </div>
-                        <div className="flex flex-col items-end">
-                          <div className={`text-5xl sm:text-6xl font-bold font-serif ${getBiasScoreColor(analysisResult.bias_score)}`}>
-                            {analysisResult.bias_score}
+                        <div className="flex flex-col items-end flex-shrink-0">
+                          <div className={`text-5xl sm:text-6xl font-bold font-serif ${getBiasScoreColor(analysisResult.overall_bias_score)}`}>
+                            {analysisResult.overall_bias_score.toFixed(1)}
                           </div>
                           <div className="text-sm text-muted-foreground font-sans">/ 10</div>
-                          <div className={`text-xs font-semibold mt-1 ${getBiasScoreColor(analysisResult.bias_score)}`}>
-                            {getBiasScoreLabel(analysisResult.bias_score)}
+                          <div className={`text-sm font-semibold mt-1 ${getBiasScoreColor(analysisResult.overall_bias_score)}`}>
+                            {analysisResult.bias_level}
                           </div>
                         </div>
                       </div>
@@ -222,68 +326,70 @@ export default function UploadPage() {
                     <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
                       
                       {/* Text Bias Analysis */}
-                      {analysisResult.text_bias && (
-                        <div className="p-6 sm:p-8">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            </div>
-                            <h3 className="text-foreground text-lg font-semibold font-sans">Text Analysis</h3>
+                      <div className="p-6 sm:p-8">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-yellow-50 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
                           </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-3xl font-bold text-foreground font-serif">{analysisResult.text_bias.score}</span>
-                              <span className="text-sm text-muted-foreground font-sans">/ 10</span>
-                            </div>
+                          <h3 className="text-foreground text-lg font-semibold font-sans">Text Analysis</h3>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-bold text-foreground font-serif">{analysisResult.score_breakdown.text_score.toFixed(0)}</span>
+                            <span className="text-sm text-muted-foreground font-sans">/ 10</span>
                           </div>
+                        </div>
 
-                          {analysisResult.text_bias.issues && analysisResult.text_bias.issues.length > 0 && (
-                            <div className="space-y-2">
-                              {analysisResult.text_bias.issues.map((issue: string, idx: number) => (
-                                <div key={idx} className="flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
-                                  <p className="text-sm text-foreground font-sans leading-relaxed">{issue}</p>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          {analysisResult.text_analysis_status === "completed" ? (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <p className="text-muted-foreground font-sans">Text bias analysis complete</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                              <p className="text-muted-foreground font-sans">Text bias analysis in progress</p>
+                            </>
                           )}
                         </div>
-                      )}
+                      </div>
 
                       {/* Visual Bias Analysis */}
-                      {analysisResult.visual_bias && (
-                        <div className="p-6 sm:p-8">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <h3 className="text-foreground text-lg font-semibold font-sans">Visual Analysis</h3>
+                      <div className="p-6 sm:p-8">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-yellow-50 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                           </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-3xl font-bold text-foreground font-serif">{analysisResult.visual_bias.score}</span>
-                              <span className="text-sm text-muted-foreground font-sans">/ 10</span>
-                            </div>
+                          <h3 className="text-foreground text-lg font-semibold font-sans">Visual Analysis</h3>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-bold text-foreground font-serif">{analysisResult.score_breakdown.visual_score.toFixed(0)}</span>
+                            <span className="text-sm text-muted-foreground font-sans">/ 10</span>
                           </div>
+                        </div>
 
-                          {analysisResult.visual_bias.issues && analysisResult.visual_bias.issues.length > 0 && (
-                            <div className="space-y-2">
-                              {analysisResult.visual_bias.issues.map((issue: string, idx: number) => (
-                                <div key={idx} className="flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0"></div>
-                                  <p className="text-sm text-foreground font-sans leading-relaxed">{issue}</p>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          {analysisResult.visual_analysis_status === "completed" ? (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <p className="text-muted-foreground font-sans">Visual bias analysis complete</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                              <p className="text-muted-foreground font-sans">Visual bias analysis in progress</p>
+                            </>
                           )}
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Recommendations Section */}
@@ -299,12 +405,12 @@ export default function UploadPage() {
                         </div>
                         
                         <div className="space-y-3">
-                          {analysisResult.recommendations.map((rec: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-md border border-border/50">
-                              <div className="w-5 h-5 bg-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs font-bold">{idx + 1}</span>
+                          {analysisResult.recommendations.map((rec: Recommendation, idx: number) => (
+                            <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-md border border-border/50">
+                              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-sm font-bold">{idx + 1}</span>
                               </div>
-                              <p className="text-sm text-foreground font-sans leading-relaxed">{rec}</p>
+                              <p className="text-sm text-foreground font-sans leading-relaxed">{rec.action}</p>
                             </div>
                           ))}
                         </div>

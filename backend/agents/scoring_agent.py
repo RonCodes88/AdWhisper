@@ -18,6 +18,8 @@ from typing import Optional, Dict, Any, List
 from enum import Enum
 import sys
 import os
+import aiohttp
+import asyncio
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -75,8 +77,9 @@ class BiasIssue(Model):
     """Individual bias issue summary"""
     category: str
     severity: SeverityLevel
-    source: str
-    description: str
+    source: str  # "text_bias_agent" or "visual_bias_agent"
+    description: str  # The "context" field from agents
+    impact: str  # The real-world harm this bias perpetuates
     examples: Optional[List[str]] = None
     confidence: float
 
@@ -90,28 +93,46 @@ class Recommendation(Model):
 
 
 class FinalBiasReport(Model):
-    """Comprehensive final bias assessment report"""
+    """Comprehensive final bias assessment report for frontend consumption"""
     request_id: str
-    overall_bias_score: float
-    assessment: str
-    score_breakdown: ScoreBreakdown
+    
+    # Source content information (for frontend display)
+    content_url: Optional[str] = None
+    content_type: Optional[str] = None  # "video", "image", "text"
+    
+    # Overall assessment
+    overall_bias_score: float  # 0-10 scale
+    assessment: str  # Human-readable assessment text
+    bias_level: str  # "Minimal Bias", "Minor Bias", "Moderate Bias", "Significant Bias"
+    
+    # Score breakdown for frontend cards (as dict for proper serialization)
+    score_breakdown: Dict[str, Any]
+    
+    # Analysis status (for progress indicators)
+    text_analysis_status: str = "completed"
+    visual_analysis_status: str = "completed"
     
     # Aggregated findings
     total_issues: int
+    critical_severity_count: int = 0
     high_severity_count: int = 0
     medium_severity_count: int = 0
     low_severity_count: int = 0
     
-    # Detailed issues
-    bias_issues: Optional[List[BiasIssue]] = None
+    # Detailed issues with full context (as dicts for proper serialization)
+    bias_issues: Optional[List[Dict[str, Any]]] = None
     top_concerns: Optional[List[str]] = None
     
-    # Recommendations
-    recommendations: Optional[List[Recommendation]] = None
+    # Recommendations (as dicts for proper serialization)
+    recommendations: Optional[List[Dict[str, Any]]] = None
     
     # RAG context
     similar_cases: Optional[List[str]] = None
     benchmark_comparison: Optional[Dict[str, Any]] = None
+    
+    # Original agent reports (for transparency and debugging)
+    text_report: Optional[Dict[str, Any]] = None
+    visual_report: Optional[Dict[str, Any]] = None
     
     # Metadata
     confidence: float
@@ -168,13 +189,246 @@ async def startup(ctx: Context):
     ctx.logger.info(f"📍 Agent address: {scoring_agent.address}")
     ctx.logger.info(f"🔧 Role: Result Aggregation and Final Bias Assessment")
     ctx.logger.info(f"🌐 Endpoint: http://localhost:8103/submit")
+    ctx.logger.info(f"📊 REST API Endpoints:")
+    ctx.logger.info(f"   POST /score - Trigger scoring by fetching reports via HTTP")
+    ctx.logger.info(f"   GET /report/{{request_id}} - Retrieve final bias report")
     ctx.logger.info(f"⚖️ Scoring Weights: Text={SCORING_WEIGHTS['text_weight']}, Visual={SCORING_WEIGHTS['visual_weight']}, Intersectional={SCORING_WEIGHTS['intersectional_weight']}")
-    ctx.logger.info(f"⚡ Ready to aggregate and score bias reports")
+    ctx.logger.info(f"⚡ Ready to aggregate and score bias reports via REST")
 
 
 @scoring_agent.on_event("shutdown")
 async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Scoring Agent shutting down...")
+
+
+# REST API endpoint for frontend to retrieve final report
+class ReportRequest(Model):
+    """Request model for retrieving a report"""
+    request_id: str
+
+
+@scoring_agent.on_rest_get("/report/{request_id}", FinalBiasReport)
+async def get_final_report(ctx: Context, request_id: str) -> FinalBiasReport:
+    """
+    REST endpoint for frontend to retrieve the final bias report.
+    
+    Usage: GET http://localhost:8103/report/{request_id}
+    """
+    ctx.logger.info(f"📨 REST request to retrieve report: {request_id}")
+    
+    # Retrieve from storage
+    final_report_key = f"final_report_{request_id}"
+    report_data = ctx.storage.get(final_report_key)
+    
+    if report_data:
+        ctx.logger.info(f"✅ Report found and returned")
+        # Convert dict back to FinalBiasReport model
+        return FinalBiasReport(**report_data)
+    else:
+        ctx.logger.warning(f"⚠️ Report not found for request_id: {request_id}")
+        # Return a "not found" report
+        return FinalBiasReport(
+            request_id=request_id,
+            overall_bias_score=0.0,
+            assessment="Report not found. Analysis may still be in progress or request_id is invalid.",
+            bias_level="Unknown",
+            score_breakdown={
+                "text_score": 0.0,
+                "visual_score": 0.0,
+                "intersectional_penalty": 0.0,
+                "weighted_score": 0.0
+            },
+            text_analysis_status="not_found",
+            visual_analysis_status="not_found",
+            total_issues=0,
+            confidence=0.0,
+            timestamp=datetime.now(UTC).isoformat()
+        )
+
+
+class ScoreRequest(Model):
+    """Request model for scoring endpoint"""
+    request_id: str
+    chromadb_collection_id: Optional[str] = None
+
+
+@scoring_agent.on_rest_post("/score", ScoreRequest, FinalBiasReport)
+async def score_via_rest(ctx: Context, req: ScoreRequest) -> FinalBiasReport:
+    """
+    REST POST endpoint for triggering scoring by fetching reports from Text and Visual agents.
+    This uses HTTP calls instead of uAgents messaging.
+    
+    Usage: POST http://localhost:8103/score
+    Body: {"request_id": "your_request_id", "chromadb_collection_id": "optional_collection_id"}
+    """
+    ctx.logger.info("=" * 80)
+    ctx.logger.info("🎯 SCORING AGENT - REST /score ENDPOINT")
+    ctx.logger.info("=" * 80)
+    ctx.logger.info(f"📨 Received scoring request for: {req.request_id}")
+    
+    try:
+        # Step 1: Fetch Text Bias Report via REST (with retries)
+        ctx.logger.info(f"📤 STEP 1: Fetching Text Bias Report via HTTP...")
+        text_agent_url = f"http://localhost:8101/report/{req.request_id}"
+        text_report = None
+        
+        # Retry logic for text report (wait up to 10 seconds)
+        max_retries = 10
+        retry_delay = 1.0
+        for attempt in range(max_retries):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    ctx.logger.info(f"   🔗 Calling: {text_agent_url} (attempt {attempt + 1}/{max_retries})")
+                    async with session.get(text_agent_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                        ctx.logger.info(f"   📥 Response status: {response.status}")
+                        if response.status == 200:
+                            result = await response.json()
+                            text_report = result.get("report", {})
+                            # Check if it's a valid report (not error)
+                            if not text_report.get("error") and text_report.get("overall_text_score") is not None:
+                                ctx.logger.info(f"   ✅ Text report fetched successfully")
+                                ctx.logger.info(f"      Score: {text_report.get('overall_text_score', 'N/A')}")
+                                break
+                            else:
+                                ctx.logger.warning(f"   ⏳ Text report not ready yet, retrying...")
+                                await asyncio.sleep(retry_delay)
+                        else:
+                            ctx.logger.warning(f"   ⏳ Text report not available yet (status {response.status}), retrying...")
+                            await asyncio.sleep(retry_delay)
+            except aiohttp.ClientConnectorError as e:
+                ctx.logger.error(f"   ❌ Cannot connect to Text Bias Agent at {text_agent_url}")
+                ctx.logger.error(f"      Make sure Text Bias Agent is running on port 8101")
+                break
+            except asyncio.TimeoutError:
+                ctx.logger.warning(f"   ⏳ Timeout fetching text report, retrying...")
+                await asyncio.sleep(retry_delay)
+            except Exception as e:
+                ctx.logger.error(f"   ❌ Error fetching text report: {e}")
+                break
+        
+        if not text_report or text_report.get("error"):
+            ctx.logger.error(f"   ❌ Failed to fetch text report after {max_retries} attempts")
+        
+        # Step 2: Fetch Visual Bias Report via REST (with retries)
+        ctx.logger.info(f"📤 STEP 2: Fetching Visual Bias Report via HTTP...")
+        visual_agent_url = f"http://localhost:8102/report/{req.request_id}"
+        visual_report = None
+        
+        # Retry logic for visual report (wait up to 15 seconds - visual analysis takes longer)
+        max_retries = 15
+        retry_delay = 1.0
+        for attempt in range(max_retries):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    ctx.logger.info(f"   🔗 Calling: {visual_agent_url} (attempt {attempt + 1}/{max_retries})")
+                    async with session.get(visual_agent_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                        ctx.logger.info(f"   📥 Response status: {response.status}")
+                        if response.status == 200:
+                            result = await response.json()
+                            visual_report = result.get("report", {})
+                            # Check if it's a valid report (not error)
+                            if not visual_report.get("error") and visual_report.get("overall_visual_score") is not None:
+                                ctx.logger.info(f"   ✅ Visual report fetched successfully")
+                                ctx.logger.info(f"      Score: {visual_report.get('overall_visual_score', 'N/A')}")
+                                break
+                            else:
+                                ctx.logger.warning(f"   ⏳ Visual report not ready yet, retrying...")
+                                await asyncio.sleep(retry_delay)
+                        else:
+                            ctx.logger.warning(f"   ⏳ Visual report not available yet (status {response.status}), retrying...")
+                            await asyncio.sleep(retry_delay)
+            except aiohttp.ClientConnectorError as e:
+                ctx.logger.error(f"   ❌ Cannot connect to Visual Bias Agent at {visual_agent_url}")
+                ctx.logger.error(f"      Make sure Visual Bias Agent is running on port 8102")
+                break
+            except asyncio.TimeoutError:
+                ctx.logger.warning(f"   ⏳ Timeout fetching visual report, retrying...")
+                await asyncio.sleep(retry_delay)
+            except Exception as e:
+                ctx.logger.error(f"   ❌ Error fetching visual report: {e}")
+                break
+        
+        if not visual_report or visual_report.get("error"):
+            ctx.logger.error(f"   ❌ Failed to fetch visual report after {max_retries} attempts")
+        
+        # Step 3: Check if we have both reports
+        if not text_report or not visual_report or text_report.get("error") or visual_report.get("error"):
+            ctx.logger.error(f"❌ Missing reports - Text: {text_report is not None and not text_report.get('error')}, Visual: {visual_report is not None and not visual_report.get('error')}")
+            return FinalBiasReport(
+                request_id=req.request_id,
+                overall_bias_score=0.0,
+                assessment="Unable to generate final report. One or more bias agent reports are missing or unavailable. Please ensure both Text and Visual Bias Agents have completed their analysis.",
+                bias_level="Error",
+                score_breakdown={
+                    "text_score": 0.0,
+                    "visual_score": 0.0,
+                    "intersectional_penalty": 0.0,
+                    "weighted_score": 0.0
+                },
+                text_analysis_status="error" if not text_report or text_report.get("error") else "completed",
+                visual_analysis_status="error" if not visual_report or visual_report.get("error") else "completed",
+                total_issues=0,
+                bias_issues=[],
+                top_concerns=[],
+                recommendations=[],
+                similar_cases=[],
+                benchmark_comparison={},
+                confidence=0.0,
+                timestamp=datetime.now(UTC).isoformat()
+            )
+        
+        # Step 4: Process final scoring
+        ctx.logger.info(f"🎯 STEP 3: Processing final scoring...")
+        collection_id = req.chromadb_collection_id or req.request_id
+        final_report = await process_final_scoring(
+            ctx,
+            req.request_id,
+            text_report,
+            visual_report,
+            collection_id
+        )
+        
+        # Step 5: Store final report for frontend retrieval
+        final_report_key = f"final_report_{req.request_id}"
+        ctx.storage.set(final_report_key, final_report.dict())
+        ctx.logger.info(f"💾 Final report stored with key: {final_report_key}")
+        
+        ctx.logger.info(f"✅ Scoring complete!")
+        ctx.logger.info(f"   📊 Final Score: {final_report.overall_bias_score:.1f}/10")
+        ctx.logger.info(f"   📋 Total Issues: {final_report.total_issues}")
+        ctx.logger.info(f"   🏷️ Bias Level: {final_report.bias_level}")
+        ctx.logger.info("=" * 80)
+        
+        return final_report
+        
+    except Exception as e:
+        ctx.logger.error(f"❌ Error during scoring: {e}")
+        import traceback
+        ctx.logger.error(f"   Traceback: {traceback.format_exc()}")
+        
+        # Return error report
+        return FinalBiasReport(
+            request_id=req.request_id,
+            overall_bias_score=0.0,
+            assessment=f"Error occurred during scoring: {str(e)}",
+            bias_level="Error",
+            score_breakdown={
+                "text_score": 0.0,
+                "visual_score": 0.0,
+                "intersectional_penalty": 0.0,
+                "weighted_score": 0.0
+            },
+            text_analysis_status="error",
+            visual_analysis_status="error",
+            total_issues=0,
+            bias_issues=[],
+            top_concerns=[],
+            recommendations=[],
+            similar_cases=[],
+            benchmark_comparison={},
+            confidence=0.0,
+            timestamp=datetime.now(UTC).isoformat()
+        )
 
 
 @scoring_protocol.on_message(model=BiasAnalysisComplete, replies=FinalBiasReport)
@@ -184,7 +438,12 @@ async def handle_bias_analysis_complete(ctx: Context, sender: str, msg: BiasAnal
     Wait for both agents before generating final report.
     """
     try:
-        ctx.logger.info(f"📨 Received {msg.sender_agent} report for request: {msg.request_id}")
+        ctx.logger.info("=" * 80)
+        ctx.logger.info(f"📨 RECEIVED MESSAGE FROM: {msg.sender_agent}")
+        ctx.logger.info(f"   Request ID: {msg.request_id}")
+        ctx.logger.info(f"   Sender: {sender}")
+        ctx.logger.info(f"   Report keys: {list(msg.report.keys())}")
+        ctx.logger.info("=" * 80)
 
         # Store the report in context storage
         storage_key = f"reports_{msg.request_id}"
@@ -227,14 +486,24 @@ async def handle_bias_analysis_complete(ctx: Context, sender: str, msg: BiasAnal
                 collection_id
             )
 
-            # Clean up storage
+            # Store final report for frontend retrieval
+            final_report_key = f"final_report_{msg.request_id}"
+            ctx.storage.set(final_report_key, final_report.dict())
+            ctx.logger.info(f"💾 Final report stored with key: {final_report_key}")
+            
+            # Clean up temporary reports storage
             ctx.storage.set(storage_key, None)
 
             ctx.logger.info(f"✅ Final report generated successfully!")
             ctx.logger.info(f"📊 Final Score: {final_report.overall_bias_score:.1f}/10")
-
-            # TODO: Send report back to FastAPI/Frontend
-            # For now just log it
+            ctx.logger.info(f"📋 Total Issues: {final_report.total_issues}")
+            ctx.logger.info(f"   🔴 Critical: {final_report.critical_severity_count}")
+            ctx.logger.info(f"   🟠 High: {final_report.high_severity_count}")
+            ctx.logger.info(f"   🟡 Medium: {final_report.medium_severity_count}")
+            ctx.logger.info(f"   🟢 Low: {final_report.low_severity_count}")
+            ctx.logger.info(f"💡 Recommendations: {len(final_report.recommendations or [])}")
+            
+            # Report is now available for frontend at: GET /report/{request_id}
 
         else:
             ctx.logger.info(f"⏳ Waiting for remaining reports...")
@@ -316,37 +585,56 @@ async def process_final_scoring(
     recommendations = await generate_comprehensive_recommendations(ctx, bias_issues, final_score)
     ctx.logger.info(f"✅ Generated {len(recommendations)} recommendations")
 
-    # Step 9: Generate assessment text
+    # Step 9: Generate assessment text and bias level
     ctx.logger.info(f"📝 Generating assessment text...")
     assessment = generate_assessment_text(final_score, len(bias_issues), severity_counts)
+    bias_level = get_bias_level(final_score)
+    ctx.logger.info(f"   🏷️ Bias Level: {bias_level}")
 
-    # Step 10: Calculate processing time
+    # Step 10: Extract content metadata
+    content_url = text_report.get("content_url") or visual_report.get("content_url")
+    content_type = text_report.get("content_type") or visual_report.get("content_type", "video")
+
+    # Step 11: Calculate processing time
     end_time = datetime.now(UTC)
     processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
 
-    # Step 11: Create final report
+    # Step 12: Create comprehensive final report for frontend
+    # Convert nested models to dicts for proper serialization
+    score_breakdown_dict = convert_score_breakdown_to_dict(ScoreBreakdown(
+        text_score=text_score,
+        visual_score=visual_score,
+        intersectional_penalty=intersectional_penalty,
+        weighted_score=final_score
+    ))
+    bias_issues_dicts = convert_bias_issues_to_dicts(bias_issues)
+    recommendations_dicts = convert_recommendations_to_dicts(recommendations)
+    
     final_report = FinalBiasReport(
         request_id=request_id,
+        content_url=content_url,
+        content_type=content_type,
         overall_bias_score=final_score,
         assessment=assessment,
-        score_breakdown=ScoreBreakdown(
-            text_score=text_score,
-            visual_score=visual_score,
-            intersectional_penalty=intersectional_penalty,
-            weighted_score=final_score
-        ),
+        bias_level=bias_level,
+        score_breakdown=score_breakdown_dict,
+        text_analysis_status="completed",
+        visual_analysis_status="completed",
         total_issues=len(bias_issues),
-        high_severity_count=severity_counts["high"],
-        medium_severity_count=severity_counts["medium"],
-        low_severity_count=severity_counts["low"],
-        bias_issues=bias_issues,
+        critical_severity_count=severity_counts.get("critical", 0),
+        high_severity_count=severity_counts.get("high", 0),
+        medium_severity_count=severity_counts.get("medium", 0),
+        low_severity_count=severity_counts.get("low", 0),
+        bias_issues=bias_issues_dicts,
         top_concerns=top_concerns,
-        recommendations=recommendations,
+        recommendations=recommendations_dicts,
         similar_cases=[case["id"] for case in benchmark_cases],
         benchmark_comparison={
             "average_score": sum(c["score"] for c in benchmark_cases) / len(benchmark_cases) if benchmark_cases else 5.0,
             "percentile": calculate_percentile(final_score, benchmark_cases)
         },
+        text_report=text_report,  # Include original text report
+        visual_report=visual_report,  # Include original visual report
         confidence=calculate_overall_confidence(text_report, visual_report),
         processing_time_ms=processing_time_ms
     )
@@ -417,37 +705,56 @@ async def handle_scoring_request(ctx: Context, sender: str, msg: ScoringRequest)
         recommendations = await generate_comprehensive_recommendations(ctx, bias_issues, final_score)
         ctx.logger.info(f"✅ Generated {len(recommendations)} recommendations")
         
-        # Step 9: Generate assessment text
+        # Step 9: Generate assessment text and bias level
         ctx.logger.info(f"📝 Generating assessment text...")
         assessment = generate_assessment_text(final_score, len(bias_issues), severity_counts)
+        bias_level = get_bias_level(final_score)
+        ctx.logger.info(f"   🏷️ Bias Level: {bias_level}")
         
-        # Step 10: Calculate processing time
+        # Step 10: Extract content metadata
+        content_url = text_report_data.get("content_url") or visual_report_data.get("content_url")
+        content_type = text_report_data.get("content_type") or visual_report_data.get("content_type", "video")
+        
+        # Step 11: Calculate processing time
         end_time = datetime.now(UTC)
         processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
         
-        # Step 11: Create final report
+        # Step 12: Create comprehensive final report for frontend
+        # Convert nested models to dicts for proper serialization
+        score_breakdown_dict = convert_score_breakdown_to_dict(ScoreBreakdown(
+            text_score=text_score,
+            visual_score=visual_score,
+            intersectional_penalty=intersectional_penalty,
+            weighted_score=final_score
+        ))
+        bias_issues_dicts = convert_bias_issues_to_dicts(bias_issues)
+        recommendations_dicts = convert_recommendations_to_dicts(recommendations)
+        
         final_report = FinalBiasReport(
             request_id=msg.request_id,
+            content_url=content_url,
+            content_type=content_type,
             overall_bias_score=final_score,
             assessment=assessment,
-            score_breakdown=ScoreBreakdown(
-                text_score=text_score,
-                visual_score=visual_score,
-                intersectional_penalty=intersectional_penalty,
-                weighted_score=final_score
-            ),
+            bias_level=bias_level,
+            score_breakdown=score_breakdown_dict,
+            text_analysis_status="completed",
+            visual_analysis_status="completed",
             total_issues=len(bias_issues),
-            high_severity_count=severity_counts["high"],
-            medium_severity_count=severity_counts["medium"],
-            low_severity_count=severity_counts["low"],
-            bias_issues=bias_issues,
+            critical_severity_count=severity_counts.get("critical", 0),
+            high_severity_count=severity_counts.get("high", 0),
+            medium_severity_count=severity_counts.get("medium", 0),
+            low_severity_count=severity_counts.get("low", 0),
+            bias_issues=bias_issues_dicts,
             top_concerns=top_concerns,
-            recommendations=recommendations,
+            recommendations=recommendations_dicts,
             similar_cases=[case["id"] for case in benchmark_cases],
             benchmark_comparison={
                 "average_score": sum(c["score"] for c in benchmark_cases) / len(benchmark_cases) if benchmark_cases else 5.0,
                 "percentile": calculate_percentile(final_score, benchmark_cases)
             },
+            text_report=text_report_data,  # Include original text report
+            visual_report=visual_report_data,  # Include original visual report
             confidence=calculate_overall_confidence(text_report_data, visual_report_data),
             processing_time_ms=processing_time_ms
         )
@@ -464,17 +771,23 @@ async def handle_scoring_request(ctx: Context, sender: str, msg: ScoringRequest)
         
     except Exception as e:
         ctx.logger.error(f"❌ Error during scoring for {msg.request_id}: {e}")
+        import traceback
+        ctx.logger.error(f"   Traceback: {traceback.format_exc()}")
+        
         # Send error report
         error_report = FinalBiasReport(
             request_id=msg.request_id,
             overall_bias_score=5.0,
-            assessment="Error occurred during scoring analysis",
-            score_breakdown=ScoreBreakdown(
-                text_score=5.0,
-                visual_score=5.0,
-                intersectional_penalty=0.0,
-                weighted_score=5.0
-            ),
+            assessment="Error occurred during scoring analysis. Please try again or contact support.",
+            bias_level="Unknown",
+            score_breakdown={
+                "text_score": 5.0,
+                "visual_score": 5.0,
+                "intersectional_penalty": 0.0,
+                "weighted_score": 5.0
+            },
+            text_analysis_status="error",
+            visual_analysis_status="error",
             total_issues=0,
             bias_issues=[],
             top_concerns=["Error during processing"],
@@ -544,23 +857,30 @@ async def detect_intersectional_bias(
     text_biases = set()
     visual_biases = set()
     
-    if "bias_types" in text_report:
-        for bias in text_report["bias_types"]:
-            bias_type = bias.get("type", "").replace("_bias", "")
+    # Extract from bias_instances (not bias_types)
+    if "bias_instances" in text_report:
+        for bias in text_report["bias_instances"]:
+            bias_type = bias.get("bias_type", "").replace("_bias", "")
             text_biases.add(bias_type)
     
-    if "bias_types" in visual_report:
-        for bias in visual_report["bias_types"]:
-            bias_type = bias.get("type", "").replace("_bias", "")
+    if "bias_instances" in visual_report:
+        for bias in visual_report["bias_instances"]:
+            bias_type = bias.get("bias_type", "").replace("_bias", "")
             visual_biases.add(bias_type)
     
     # Calculate intersectional penalty
     overlapping = text_biases.intersection(visual_biases)
     
     if overlapping:
-        # Each overlapping bias type adds 0.5 to penalty
+        # Each overlapping bias type adds 0.5 to penalty, weighted by severity
         penalty = len(overlapping) * 0.5
         ctx.logger.info(f"⚠️ Intersectional bias detected in: {', '.join(overlapping)}")
+        
+        # Log detailed intersectional findings
+        for bias_type in overlapping:
+            ctx.logger.info(f"   🔄 {bias_type}: Present in both text and visual content")
+    else:
+        ctx.logger.info(f"   ℹ️ No intersectional bias detected")
     
     return min(penalty, 2.0)  # Cap at 2.0
 
@@ -595,37 +915,54 @@ async def aggregate_bias_issues(
     visual_report: Dict[str, Any]
 ) -> List[BiasIssue]:
     """
-    Aggregate all bias issues from both agents.
+    Aggregate all bias issues from both agents with full context.
+    Extracts detailed information including examples, context, impact, and confidence.
     """
     issues = []
     
-    # Aggregate text biases
-    if "bias_types" in text_report:
-        for bias in text_report["bias_types"]:
-            issue = BiasIssue(
-                category=bias.get("type", "unknown"),
-                severity=SeverityLevel(bias.get("severity", "low")),
-                source="text_bias_agent",
-                description=bias.get("context", ""),
-                examples=bias.get("examples", []),
-                confidence=bias.get("confidence", 0.5)
-            )
-            issues.append(issue)
+    ctx.logger.info(f"🔍 DEBUG - Text report keys: {list(text_report.keys())}")
+    ctx.logger.info(f"🔍 DEBUG - Visual report keys: {list(visual_report.keys())}")
     
-    # Aggregate visual biases
-    if "bias_types" in visual_report:
-        for bias in visual_report["bias_types"]:
-            issue = BiasIssue(
-                category=bias.get("type", "unknown"),
-                severity=SeverityLevel(bias.get("severity", "low")),
-                source="visual_bias_agent",
-                description=bias.get("context", ""),
-                examples=bias.get("examples", []),
-                confidence=bias.get("confidence", 0.5)
-            )
-            issues.append(issue)
+    # Aggregate text biases from bias_instances
+    if "bias_instances" in text_report:
+        ctx.logger.info(f"   📝 Processing {len(text_report['bias_instances'])} text bias instances...")
+        ctx.logger.info(f"   🔍 DEBUG - First instance structure: {text_report['bias_instances'][0] if text_report['bias_instances'] else 'No instances'}")
+        for bias in text_report["bias_instances"]:
+            try:
+                issue = BiasIssue(
+                    category=bias.get("bias_type", "unknown"),
+                    severity=SeverityLevel(bias.get("severity", "low")),
+                    source="text_bias_agent",
+                    description=bias.get("context", "No description provided"),
+                    impact=bias.get("impact", "Impact not specified"),
+                    examples=bias.get("examples", []),
+                    confidence=bias.get("confidence", 0.5)
+                )
+                issues.append(issue)
+                ctx.logger.info(f"      ✓ {issue.category} ({issue.severity.value})")
+            except Exception as e:
+                ctx.logger.warning(f"      ⚠️ Failed to parse text bias: {e}")
     
-    ctx.logger.info(f"📋 Aggregated {len(issues)} bias issues")
+    # Aggregate visual biases from bias_instances
+    if "bias_instances" in visual_report:
+        ctx.logger.info(f"   👁️ Processing {len(visual_report['bias_instances'])} visual bias instances...")
+        for bias in visual_report["bias_instances"]:
+            try:
+                issue = BiasIssue(
+                    category=bias.get("bias_type", "unknown"),
+                    severity=SeverityLevel(bias.get("severity", "low")),
+                    source="visual_bias_agent",
+                    description=bias.get("context", "No description provided"),
+                    impact=bias.get("impact", "Impact not specified"),
+                    examples=bias.get("examples", []),
+                    confidence=bias.get("confidence", 0.5)
+                )
+                issues.append(issue)
+                ctx.logger.info(f"      ✓ {issue.category} ({issue.severity.value})")
+            except Exception as e:
+                ctx.logger.warning(f"      ⚠️ Failed to parse visual bias: {e}")
+    
+    ctx.logger.info(f"📋 Successfully aggregated {len(issues)} bias issues total")
     return issues
 
 
@@ -737,18 +1074,35 @@ async def generate_comprehensive_recommendations(
     return recommendations
 
 
+def get_bias_level(score: float) -> str:
+    """
+    Get bias level label for frontend display.
+    Matches the format shown in the UI: "Minimal Bias", "Minor Bias", etc.
+    """
+    if score >= 9.0:
+        return "Minimal Bias"
+    elif score >= 7.0:
+        return "Minor Bias"
+    elif score >= 4.0:
+        return "Moderate Bias"
+    else:
+        return "Significant Bias"
+
+
 def generate_assessment_text(score: float, issue_count: int, severity_counts: Dict[str, int]) -> str:
     """
     Generate human-readable assessment text based on score.
     """
     if score >= 9.0:
-        return f"✅ Excellent - Minimal to no bias detected. Ad content demonstrates strong inclusivity and fairness ({issue_count} minor issues found)."
+        return f"Excellent - Minimal to no bias detected. Ad content demonstrates strong inclusivity and fairness ({issue_count} minor issues found)."
     elif score >= 7.0:
-        return f"⚠️ Good - Minor bias detected. Ad content is largely acceptable with {issue_count} issues requiring minor improvements."
+        return f"Good - Minor bias detected. Ad content is largely acceptable with {issue_count} issues requiring minor improvements."
     elif score >= 4.0:
-        return f"⚠️ Moderate Concerns - Moderate bias detected. Ad content needs revision to address {issue_count} issues, including {severity_counts['high']} high-severity concerns."
+        return f"Moderate Concerns - Moderate bias detected. Ad content needs revision to address {issue_count} issues, including {severity_counts.get('high', 0)} high-severity concerns."
     else:
-        return f"❌ Significant Concerns - Significant bias detected. Ad content requires substantial revision to address {issue_count} issues, including {severity_counts['high']} high-severity and {severity_counts['critical']} critical concerns."
+        critical = severity_counts.get('critical', 0)
+        high = severity_counts.get('high', 0)
+        return f"Significant Concerns - Significant bias detected. Ad content requires substantial revision to address {issue_count} issues, including {high} high-severity and {critical} critical concerns."
 
 
 def calculate_percentile(score: float, benchmark_cases: List[Dict[str, Any]]) -> float:
@@ -780,6 +1134,51 @@ def calculate_overall_confidence(text_report: Dict[str, Any], visual_report: Dic
     return overall
 
 
+def convert_bias_issues_to_dicts(issues: List[BiasIssue]) -> List[Dict[str, Any]]:
+    """
+    Convert BiasIssue Model objects to dicts for proper serialization.
+    """
+    return [
+        {
+            "category": issue.category,
+            "severity": issue.severity.value,  # Convert enum to string
+            "source": issue.source,
+            "description": issue.description,
+            "impact": issue.impact,
+            "examples": issue.examples,
+            "confidence": issue.confidence
+        }
+        for issue in issues
+    ]
+
+
+def convert_recommendations_to_dicts(recommendations: List[Recommendation]) -> List[Dict[str, Any]]:
+    """
+    Convert Recommendation Model objects to dicts for proper serialization.
+    """
+    return [
+        {
+            "priority": rec.priority.value,  # Convert enum to string
+            "category": rec.category,
+            "action": rec.action,
+            "impact": rec.impact
+        }
+        for rec in recommendations
+    ]
+
+
+def convert_score_breakdown_to_dict(score_breakdown: ScoreBreakdown) -> Dict[str, Any]:
+    """
+    Convert ScoreBreakdown Model object to dict for proper serialization.
+    """
+    return {
+        "text_score": score_breakdown.text_score,
+        "visual_score": score_breakdown.visual_score,
+        "intersectional_penalty": score_breakdown.intersectional_penalty,
+        "weighted_score": score_breakdown.weighted_score
+    }
+
+
 async def store_final_report_in_chromadb(ctx: Context, report: FinalBiasReport):
     """
     Store final report in ChromaDB for future RAG retrieval and learning.
@@ -807,11 +1206,37 @@ if __name__ == "__main__":
 Role: Result Aggregation and Final Bias Assessment
 
 Capabilities:
-  ✓ Aggregates Text and Visual Bias reports
+  ✓ Aggregates Text and Visual Bias reports with full context
+  ✓ Preserves detailed bias descriptions and impact analysis
   ✓ Detects intersectional bias patterns
   ✓ RAG retrieval for benchmark comparison
   ✓ Calculates weighted final scores
   ✓ Generates comprehensive recommendations
+  ✓ REST API for frontend report retrieval
+
+REST API Endpoints:
+  • POST /score - Trigger scoring by fetching reports from Text/Visual agents via HTTP
+    URL: http://localhost:8103/score
+    Body: {"request_id": "your_request_id"}
+  • GET /report/{request_id} - Retrieve final bias report (JSON)
+    URL: http://localhost:8103/report/{request_id}
+
+Architecture:
+  • Uses REST HTTP calls instead of uAgents messaging
+  • Fetches reports from Text Agent (port 8101) and Visual Agent (port 8102)
+  • Aggregates results and generates comprehensive final report
+
+Report Output Structure:
+  • Overall Score (0-10)
+  • Score Breakdown (text, visual, intersectional)
+  • Bias Issues (with examples, context, impact, severity)
+  • Severity Counts (critical, high, medium, low)
+  • Top Concerns (prioritized)
+  • Recommendations (actionable)
+  • Original Reports (text & visual for transparency)
+  • Benchmark Comparison
+  • Confidence Score
+  • Processing Time
 
 Scoring Scale (0-10):
   • 0-3: Significant bias (high concern)
@@ -823,6 +1248,10 @@ Scoring Weights:
   • Text: 40%
   • Visual: 40%
   • Intersectional: 20%
+
+Configuration:
+  • Port: 8103
+  • Endpoint: http://localhost:8103/submit
 
 📍 Waiting for agent reports to aggregate...
 🛑 Stop with Ctrl+C

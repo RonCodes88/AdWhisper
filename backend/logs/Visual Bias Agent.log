@@ -56,13 +56,12 @@ INFO:     [visual_bias_agent]: Agent inspector available at https://agentverse.a
 INFO:     [visual_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8102&address=agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
 INFO:     [visual_bias_agent]: Starting server on http://0.0.0.0:8102 (Press CTRL+C to quit)
 INFO:     [visual_bias_agent]: Starting server on http://0.0.0.0:8102 (Press CTRL+C to quit)
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
 INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
-INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
-INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
-INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
-INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [uagents.registration]: Registration on Almanac API successful
-INFO:     [uagents.registration]: Registering on almanac contract...
-INFO:     [uagents.registration]: Registering on almanac contract...complete
+INFO:     [uagents.registration]: Almanac contract registration is up to date!

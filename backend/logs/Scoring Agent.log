@@ -14,11 +14,37 @@ WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
 Role: Result Aggregation and Final Bias Assessment
 
 Capabilities:
-  ✓ Aggregates Text and Visual Bias reports
+  ✓ Aggregates Text and Visual Bias reports with full context
+  ✓ Preserves detailed bias descriptions and impact analysis
   ✓ Detects intersectional bias patterns
   ✓ RAG retrieval for benchmark comparison
   ✓ Calculates weighted final scores
   ✓ Generates comprehensive recommendations
+  ✓ REST API for frontend report retrieval
+
+REST API Endpoints:
+  • POST /score - Trigger scoring by fetching reports from Text/Visual agents via HTTP
+    URL: http://localhost:8103/score
+    Body: {"request_id": "your_request_id"}
+  • GET /report/{request_id} - Retrieve final bias report (JSON)
+    URL: http://localhost:8103/report/{request_id}
+
+Architecture:
+  • Uses REST HTTP calls instead of uAgents messaging
+  • Fetches reports from Text Agent (port 8101) and Visual Agent (port 8102)
+  • Aggregates results and generates comprehensive final report
+
+Report Output Structure:
+  • Overall Score (0-10)
+  • Score Breakdown (text, visual, intersectional)
+  • Bias Issues (with examples, context, impact, severity)
+  • Severity Counts (critical, high, medium, low)
+  • Top Concerns (prioritized)
+  • Recommendations (actionable)
+  • Original Reports (text & visual for transparency)
+  • Benchmark Comparison
+  • Confidence Score
+  • Processing Time
 
 Scoring Scale (0-10):
   • 0-3: Significant bias (high concern)
@@ -30,6 +56,10 @@ Scoring Weights:
   • Text: 40%
   • Visual: 40%
   • Intersectional: 20%
+
+Configuration:
+  • Port: 8103
+  • Endpoint: http://localhost:8103/submit
 
 📍 Waiting for agent reports to aggregate...
 🛑 Stop with Ctrl+C
@@ -44,20 +74,33 @@ INFO:     [scoring_agent]: 🔧 Role: Result Aggregation and Final Bias Assessme
 INFO:     [scoring_agent]: 🔧 Role: Result Aggregation and Final Bias Assessment
 INFO:     [scoring_agent]: 🌐 Endpoint: http://localhost:8103/submit
 INFO:     [scoring_agent]: 🌐 Endpoint: http://localhost:8103/submit
+INFO:     [scoring_agent]: 📊 REST API Endpoints:
+INFO:     [scoring_agent]: 📊 REST API Endpoints:
+INFO:     [scoring_agent]:    POST /score - Trigger scoring by fetching reports via HTTP
+INFO:     [scoring_agent]:    POST /score - Trigger scoring by fetching reports via HTTP
+INFO:     [scoring_agent]:    GET /report/{request_id} - Retrieve final bias report
+INFO:     [scoring_agent]:    GET /report/{request_id} - Retrieve final bias report
 INFO:     [scoring_agent]: ⚖️ Scoring Weights: Text=0.4, Visual=0.4, Intersectional=0.2
 INFO:     [scoring_agent]: ⚖️ Scoring Weights: Text=0.4, Visual=0.4, Intersectional=0.2
-INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports
-INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports
+INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports via REST
+INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports via REST
 INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
 INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
 INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
 INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
-INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [uagents.registration]: Registration on Almanac API successful
 INFO:     [uagents.registration]: Almanac contract registration is up to date!
+pyenv: python: command not found
+
+The `python' command exists in these Python versions:
+  3.10.1
+
+Note: See 'pyenv help global' for tips on allowing both
+      python2 and python3 to be found.

@@ -15,10 +15,10 @@ Role: Text Content Analysis and Bias Detection
 
 Capabilities:
   ✓ Analyzes text for linguistic bias patterns
-  ✓ RAG retrieval from ChromaDB for similar cases
+  ✓ Claude Haiku LLM integration for fast, intelligent analysis
   ✓ Detects gender, racial, age, socioeconomic bias
-  ✓ ASI:ONE LLM integration for intelligent analysis
   ✓ Provides confidence scores and recommendations
+  ✓ RESTful API for easy integration
 
 Bias Types Detected:
   • Gender bias (stereotyping, exclusionary language)
@@ -27,6 +27,22 @@ Bias Types Detected:
   • Socioeconomic bias (class assumptions)
   • Disability bias (ableist language)
   • LGBTQ+ bias (heteronormative assumptions)
+
+REST API Endpoints:
+  • POST /analyze - Analyze text content for bias
+    URL: http://localhost:8101/analyze
+  • GET /report/{request_id} - Retrieve stored text bias report
+    URL: http://localhost:8101/report/{request_id}
+
+Architecture:
+  • Analyzes text content and stores report in local storage
+  • Triggers Scoring Agent via HTTP POST to aggregate final report
+  • Scoring Agent fetches reports from Text/Visual agents via HTTP GET
+  • Uses REST HTTP endpoints instead of uAgents messaging
+  
+Configuration:
+  • Port: 8101
+  • Endpoint: http://localhost:8101/submit
 
 📍 Waiting for text analysis requests...
 🛑 Stop with Ctrl+C
@@ -41,10 +57,12 @@ INFO:     [text_bias_agent]: 🔧 Role: Text Content Analysis and Bias Detection
 INFO:     [text_bias_agent]: 🔧 Role: Text Content Analysis and Bias Detection
 INFO:     [text_bias_agent]: 🌐 Endpoint: http://localhost:8101/submit
 INFO:     [text_bias_agent]: 🌐 Endpoint: http://localhost:8101/submit
-INFO:     [text_bias_agent]: 🧠 ASI:ONE Integration: Ready for LLM-powered analysis
-INFO:     [text_bias_agent]: 🧠 ASI:ONE Integration: Ready for LLM-powered analysis
+INFO:     [text_bias_agent]: 🧠 Claude Haiku Integration: Ready for fast LLM-powered analysis
+INFO:     [text_bias_agent]: 🧠 Claude Haiku Integration: Ready for fast LLM-powered analysis
 INFO:     [text_bias_agent]: ⚡ Ready to analyze text content for bias
 INFO:     [text_bias_agent]: ⚡ Ready to analyze text content for bias
+INFO:     [text_bias_agent]: ✅ Anthropic API key configured
+INFO:     [text_bias_agent]: ✅ Anthropic API key configured
 INFO:     [text_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8101&address=agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
 INFO:     [text_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8101&address=agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
 INFO:     [text_bias_agent]: Starting server on http://0.0.0.0:8101 (Press CTRL+C to quit)
@@ -52,10 +70,9 @@ INFO:     [text_bias_agent]: Starting server on http://0.0.0.0:8101 (Press CTRL+
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
 INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
-INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
-INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [uagents.registration]: Registration on Almanac API successful
-INFO:     [uagents.registration]: Registering on almanac contract...
-INFO:     [uagents.registration]: Registering on almanac contract...complete
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
