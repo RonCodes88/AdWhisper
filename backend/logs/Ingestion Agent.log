@@ -1,24 +1,40 @@
+WARNING:  [ingestion_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [ingestion_agent]: Endpoint /submit is reserved
+WARNING:  [ingestion_agent]: Discarding duplicate REST endpoint: POST /submit
 WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
 WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
 WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [ingestion_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [ingestion_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [ingestion_agent]: Endpoint /submit is reserved
+WARNING:  [ingestion_agent]: Endpoint /submit is reserved
+WARNING:  [ingestion_agent]: Discarding duplicate REST endpoint: POST /submit
+WARNING:  [ingestion_agent]: Discarding duplicate REST endpoint: POST /submit
 
 ╔══════════════════════════════════════════════════════════════╗
 ║          🚀 INGESTION AGENT - Ad Bias Detection              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Role: Data Reception, Preprocessing, and Embedding Generation
+Role: Content Extraction, Claude Preprocessing, and Agent Routing
+
+Architecture Flow:
+  1. Extract YouTube content (transcript + frames)
+  2. Claude preprocessing and analysis
+  3. Route raw content to specialized agents
+  4. Agents handle their own embeddings + ChromaDB
 
 Capabilities:
-  ✓ Receives ad content (text, images, videos)
-  ✓ Generates embeddings (text + visual)
-  ✓ Stores in ChromaDB for RAG retrieval
-  ✓ Routes to specialized analysis agents
+  ✓ Extracts YouTube transcripts and video frames
+  ✓ Claude-powered content preprocessing
+  ✓ Routes text content to Text Bias Agent
+  ✓ Routes visual content to Visual Bias Agent
+  ✓ 1-minute video duration limit enforcement
 
 Endpoints:
   • Agent Protocol: http://localhost:8100/submit
-  • REST API: http://localhost:8100/analyze
+  • REST API: http://localhost:8100/submit
 
-📍 Waiting for requests...
+📍 Waiting for YouTube URLs...
 🛑 Stop with Ctrl+C
     
 INFO:     [ingestion_agent]: Starting agent with address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
@@ -27,18 +43,34 @@ INFO:     [ingestion_agent]: 🚀 Ingestion Agent started successfully!
 INFO:     [ingestion_agent]: 🚀 Ingestion Agent started successfully!
 INFO:     [ingestion_agent]: 📍 Agent address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
 INFO:     [ingestion_agent]: 📍 Agent address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
-INFO:     [ingestion_agent]: 🔧 Role: Data Reception, Preprocessing, and Embedding Generation
-INFO:     [ingestion_agent]: 🔧 Role: Data Reception, Preprocessing, and Embedding Generation
+INFO:     [ingestion_agent]: 🔧 Role: Content Extraction, Claude Preprocessing, and Agent Routing
+INFO:     [ingestion_agent]: 🔧 Role: Content Extraction, Claude Preprocessing, and Agent Routing
 INFO:     [ingestion_agent]: 🌐 Endpoint: http://localhost:8100/submit
 INFO:     [ingestion_agent]: 🌐 Endpoint: http://localhost:8100/submit
-INFO:     [ingestion_agent]: ⚡ Ready to receive ad content for bias analysis
-INFO:     [ingestion_agent]: ⚡ Ready to receive ad content for bias analysis
+INFO:     [ingestion_agent]: ✅ ANTHROPIC_API_KEY: Configured
+INFO:     [ingestion_agent]: ✅ ANTHROPIC_API_KEY: Configured
+INFO:     [ingestion_agent]: ✅ AGENTVERSE_API_KEY: Configured
+INFO:     [ingestion_agent]: ✅ AGENTVERSE_API_KEY: Configured
+INFO:     [ingestion_agent]: 🧠 Claude Integration: agent1qvk7q2av3e2y5gf5s90nfzkc8a48q3wdqeevwrtgqfdl0k78rspd6f2l4dx
+INFO:     [ingestion_agent]: 🧠 Claude Integration: agent1qvk7q2av3e2y5gf5s90nfzkc8a48q3wdqeevwrtgqfdl0k78rspd6f2l4dx
+INFO:     [ingestion_agent]: 📤 Text Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Text Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 👁️ Visual Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 👁️ Visual Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: ✅ Claude YouTube Processor: Ready for intelligent video processing
+INFO:     [ingestion_agent]: ✅ Claude YouTube Processor: Ready for intelligent video processing
+INFO:     [ingestion_agent]: ⚡ Ready to extract content and route to bias analysis agents
+INFO:     [ingestion_agent]: ⚡ Ready to extract content and route to bias analysis agents
 INFO:     [ingestion_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8100&address=agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
 INFO:     [ingestion_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8100&address=agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
 INFO:     [ingestion_agent]: Starting server on http://0.0.0.0:8100 (Press CTRL+C to quit)
 INFO:     [ingestion_agent]: Starting server on http://0.0.0.0:8100 (Press CTRL+C to quit)
 INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: claude_preprocess_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: claude_preprocess_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: claude_preprocess_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: claude_preprocess_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
@@ -46,117 +78,325 @@ INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
 INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [uagents.registration]: Registration on Almanac API successful
 INFO:     [uagents.registration]: Almanac contract registration is up to date!
-INFO:     [ingestion_agent]: 📨 REST API: Received content request: caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: 📨 REST API: Received content request: caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: 🔄 Preprocessing content for request caadaddb-0592-4312-85df-f5aec346c2f7...
-INFO:     [ingestion_agent]: 🔄 Preprocessing content for request caadaddb-0592-4312-85df-f5aec346c2f7...
-INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
-INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
-INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
-INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
-INFO:     [ingestion_agent]:    - Transcript: 151 characters
-INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]: 🌐 REST request received: eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: 🌐 REST request received: eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: 📨 Received ad content request: eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: 📨 Received ad content request: eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: 📊 Content type: ContentType.VIDEO
+INFO:     [ingestion_agent]: 📊 Content type: ContentType.VIDEO
+INFO:     [ingestion_agent]: 🔄 Extracting content for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: 🔄 Extracting content for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content with Claude...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content with Claude...
+[youtube] Extracting URL: https://www.youtube.com/watch?v=TVGDny9eneo
+
+🎬 PROCESSING YOUTUBE VIDEO WITH CLAUDE
+🔗 URL: https://www.youtube.com/watch?v=TVGDny9eneo
+📺 Video ID: TVGDny9eneo
+📝 EXTRACTING TRANSCRIPT...
+✅ TRANSCRIPT EXTRACTED:
+   📏 Length: 151 characters
+   📄 Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+   📄 FULL TRANSCRIPT:
+   ----------------------------------------
+   climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+   ----------------------------------------
+📥 DOWNLOADING VIDEO...
+📥 Downloading video with yt-dlp from: https://www.youtube.com/watch?v=TVGDny9eneo
+[youtube] TVGDny9eneo: Downloading webpage
+[youtube] TVGDny9eneo: Downloading android sdkless player API JSON
+[youtube] TVGDny9eneo: Downloading tv client config
+[youtube] TVGDny9eneo: Downloading tv player API JSON
+[youtube] TVGDny9eneo: Downloading web safari player API JSON
+[youtube] TVGDny9eneo: Downloading player 6e4dbefe-main
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] TVGDny9eneo: nsig extraction failed: Some formats may be missing
+         n = Q0b7Gk_-Xop923JL ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] TVGDny9eneo: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] TVGDny9eneo: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] TVGDny9eneo: Downloading m3u8 information
+[youtube] Extracting URL: https://www.youtube.com/watch?v=TVGDny9eneo
+📹 Video: Humane World for Animals – with Grammy-nominated Sia
+⏱️  Duration: 30s
+[youtube] TVGDny9eneo: Downloading webpage
+[youtube] TVGDny9eneo: Downloading android sdkless player API JSON
+[youtube] TVGDny9eneo: Downloading tv client config
+[youtube] TVGDny9eneo: Downloading tv player API JSON
+[youtube] TVGDny9eneo: Downloading web safari player API JSON
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] TVGDny9eneo: nsig extraction failed: Some formats may be missing
+         n = JDy-D49HO5_AcKz9 ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] TVGDny9eneo: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] TVGDny9eneo: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] TVGDny9eneo: Downloading m3u8 information
+[info] TVGDny9eneo: Downloading 1 format(s): 95
+[download] Sleeping 6.00 seconds as required by the site...
+[hlsnative] Downloading m3u8 manifest
+[hlsnative] Total fragments: 6
+[download] Destination: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+[download] 100.0% of ~   1.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  50.0% of ~   6.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  38.9% of ~  18.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  35.7% of ~  42.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  34.4% of ~  90.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  33.9% of ~ 186.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  33.6% of ~ 378.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  33.5% of ~ 762.00KiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  33.4% of ~   1.49MiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]  21.3% of ~   2.99MiB at    4.87KiB/s ETA Unknown (frag 0/6)[download]   8.3% of ~   7.65MiB at    4.87KiB/s ETA Unknown (frag 1/6)[download]  33.4% of ~   1.91MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  33.4% of ~   1.91MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  33.5% of ~   1.92MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  33.7% of ~   1.93MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  34.1% of ~   1.96MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  34.9% of ~   2.00MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  36.3% of ~   2.10MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  38.8% of ~   2.28MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  35.2% of ~   2.66MiB at    1.23MiB/s ETA Unknown (frag 1/6)[download]  25.3% of ~   3.70MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  50.1% of ~   1.87MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  50.1% of ~   1.87MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  50.2% of ~   1.88MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  50.4% of ~   1.89MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  50.8% of ~   1.90MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  51.6% of ~   1.93MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  53.1% of ~   1.99MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  55.9% of ~   2.12MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  60.5% of ~   2.37MiB at    1.23MiB/s ETA Unknown (frag 2/6)[download]  62.9% of ~   2.87MiB at    3.29MiB/s ETA Unknown (frag 2/6)[download]  33.7% of ~   5.35MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  66.7% of ~   2.71MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  66.7% of ~   2.71MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  66.8% of ~   2.71MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  67.0% of ~   2.72MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  67.2% of ~   2.73MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  67.8% of ~   2.75MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  68.9% of ~   2.80MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  71.0% of ~   2.89MiB at    3.29MiB/s ETA Unknown (frag 3/6)[download]  74.8% of ~   3.08MiB at    4.75MiB/s ETA Unknown (frag 3/6)[download]  81.1% of ~   3.46MiB at    4.75MiB/s ETA Unknown (frag 3/6)[download]  66.9% of ~   4.21MiB at    4.75MiB/s ETA Unknown (frag 3/6)[download]  49.1% of ~   5.74MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  83.6% of ~   3.39MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  83.8% of ~   3.40MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  84.2% of ~   3.42MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  85.1% of ~   3.45MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  86.9% of ~   3.53MiB at    4.75MiB/s ETA Unknown (frag 4/6)[download]  90.1% of ~   3.68MiB at    6.31MiB/s ETA Unknown (frag 4/6)[download]  95.9% of ~   3.98MiB at    6.31MiB/s ETA Unknown (frag 4/6)[download]  86.9% of ~   4.58MiB at    6.31MiB/s ETA Unknown (frag 4/6)[download]  64.5% of ~   6.17MiB at    6.31MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    7.47MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    7.47MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    7.47MiB/s ETA Unknown (frag 5/6)[download]  99.9% of ~   3.98MiB at    7.47MiB/s ETA Unknown (frag 6/6)[download] 100% of    3.98MiB in 00:00:00 at 10.13MiB/s                
+WARNING: TVGDny9eneo: Possible MPEG-TS in MP4 container or malformed AAC timestamps. Install ffmpeg to fix this automatically
+[h264 @ 0x12b89f8a0] co located POCs unavailable
+[h264 @ 0x12b89f8a0] co located POCs unavailable
+[h264 @ 0x12b897fc0] co located POCs unavailable
+[h264 @ 0x12b89f8a0] co located POCs unavailable
+[h264 @ 0x12b89f8a0] Missing reference picture, default is 0
+[h264 @ 0x12b89f8a0] decode_slice_header error
+[h264 @ 0x12b897fc0] reference picture missing during reorder
+[h264 @ 0x12b897fc0] reference picture missing during reorder
+[h264 @ 0x12b897fc0] reference picture missing during reorder
+[h264 @ 0x12b897fc0] reference picture missing during reorder
+[h264 @ 0x12b897fc0] Missing reference picture, default is 0
+[h264 @ 0x12b897fc0] decode_slice_header error
+[h264 @ 0x12b8b60b0] Missing reference picture, default is 65558
+[h264 @ 0x12b8d0b00] mmco: unref short failure
+✅ Video downloaded: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+🎬 EXTRACTING FRAMES EVERY 5 SECONDS...
+🎬 Extracting frames every 5 seconds from video file...
+📊 Video duration: 30s, will extract 6 frames
+📊 Video info: 722 frames, 23.976023976023978 FPS
+📸 Frame 1: 0s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_1_0s.jpg
+📸 Frame 2: 5s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_2_5s.jpg
+📸 Frame 3: 10s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_3_10s.jpg
+📸 Frame 4: 15s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_4_15s.jpg
+📸 Frame 5: 20s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_5_20s.jpg
+📸 Frame 6: 25s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_6_25s.jpg
+✅ Extracted 6 frames from video
+🧠 PROCESSING TRANSCRIPT WITH CLAUDE...
+🧠 Using Claude to analyze transcript for bias...
+❌ Claude API error: 404 - {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"},"request_id":"req_011CUVGUAdVo2KeD4PRVnUBE"}
+⚠️ Claude transcript analysis failed
+🗑️ Cleaned up video file: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+✅ PROCESSING COMPLETE!
+   📝 Transcript: 151 chars
+   🎬 Frames: 6 extracted (every 5 seconds)
+   📊 Metadata: Humane World for Animals – with Grammy-nominated Sia
+   💾 Frame images saved to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames
+==================================================
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully with Claude
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully with Claude
+INFO:     [ingestion_agent]:    ✅ TRANSCRIPT EXTRACTED:
+INFO:     [ingestion_agent]:    ✅ TRANSCRIPT EXTRACTED:
+INFO:     [ingestion_agent]:       Length: 151 characters
+INFO:     [ingestion_agent]:       Length: 151 characters
+INFO:     [ingestion_agent]:       Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+INFO:     [ingestion_agent]:       Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+INFO:     [ingestion_agent]:    📄 FULL TRANSCRIPT:
+INFO:     [ingestion_agent]:    📄 FULL TRANSCRIPT:
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+INFO:     [ingestion_agent]:    climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    💾 TRANSCRIPT SAVED to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/transcript_TVGDny9eneo.txt
+INFO:     [ingestion_agent]:    💾 TRANSCRIPT SAVED to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/transcript_TVGDny9eneo.txt
+INFO:     [ingestion_agent]:    ✅ CLAUDE-SELECTED BIAS-RELEVANT FRAMES:
+INFO:     [ingestion_agent]:    ✅ CLAUDE-SELECTED BIAS-RELEVANT FRAMES:
+INFO:     [ingestion_agent]:       Count: 6 frames
+INFO:     [ingestion_agent]:       Count: 6 frames
+INFO:     [ingestion_agent]:       Size: (720, 1280, 3)
+INFO:     [ingestion_agent]:       Size: (720, 1280, 3)
+INFO:     [ingestion_agent]:       Format: numpy arrays (BGR, ready for analysis)
+INFO:     [ingestion_agent]:       Format: numpy arrays (BGR, ready for analysis)
+INFO:     [ingestion_agent]:       Selection: Claude identified most bias-relevant frames
+INFO:     [ingestion_agent]:       Selection: Claude identified most bias-relevant frames
 INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
 INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-INFO:     [ingestion_agent]: ✅ Content preprocessed for request caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: ✅ Content preprocessed for request caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: 🧠 Generating embeddings for request caadaddb-0592-4312-85df-f5aec346c2f7...
-INFO:     [ingestion_agent]: 🧠 Generating embeddings for request caadaddb-0592-4312-85df-f5aec346c2f7...
-INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
-INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
-INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: mps
-INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.06it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.05it/s]
-INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
-INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
-INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
-INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
-INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: mps
-INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: clip-ViT-B-32
-Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 22.58it/s]
-INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
-INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
-INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
-INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:chromadb.telemetry.product.posthog:Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
-INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
-INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
-INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
-INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
-INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]:    - Text embedding: True
-INFO:     [ingestion_agent]:    - Text embedding: True
-INFO:     [ingestion_agent]:    - Visual embedding: True
-INFO:     [ingestion_agent]:    - Visual embedding: True
-INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: caadaddb-0592-4312-85df-f5aec346c2f7
-INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: ✅ Content extracted for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: ✅ Content extracted for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0...
+INFO:     [ingestion_agent]: ✅ Claude preprocessing already done during YouTube extraction - using existing analysis
+INFO:     [ingestion_agent]: ✅ Claude preprocessing already done during YouTube extraction - using existing analysis
+INFO:     [ingestion_agent]: 🖼️  Converting 6 Claude-selected frames to base64...
+INFO:     [ingestion_agent]: 🖼️  Converting 6 Claude-selected frames to base64...
+INFO:     [ingestion_agent]: ✅ Claude-selected frames converted to base64
+INFO:     [ingestion_agent]: ✅ Claude-selected frames converted to base64
 INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
 INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
-INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
-INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
-INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
-INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing TEXT content to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing TEXT content to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]:    - Text length: 151 characters
+INFO:     [ingestion_agent]:    - Text length: 151 characters
+INFO:     [ingestion_agent]: 📤 Routing VISUAL content to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing VISUAL content to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]:    - Frames count: 6
+INFO:     [ingestion_agent]:    - Frames count: 6
 INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
 INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
-INFO:     [ingestion_agent]: 📨 REST API: Received content request: 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: 📨 REST API: Received content request: 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: 🔄 Preprocessing content for request 687791fa-5367-47c1-81e4-2b37da780532...
-INFO:     [ingestion_agent]: 🔄 Preprocessing content for request 687791fa-5367-47c1-81e4-2b37da780532...
-INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
-INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
-INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
-INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
-INFO:     [ingestion_agent]:    - Transcript: 151 characters
-INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]: ✅ Request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0 processed successfully
+INFO:     [ingestion_agent]: ✅ Request eeed0325-a8da-4fd8-8a14-1f68bf96cdc0 processed successfully
+INFO:     [ingestion_agent]: 🌐 REST request received: 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: 🌐 REST request received: 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: 📨 Received ad content request: 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: 📨 Received ad content request: 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: 📊 Content type: ContentType.VIDEO
+INFO:     [ingestion_agent]: 📊 Content type: ContentType.VIDEO
+INFO:     [ingestion_agent]: 🔄 Extracting content for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: 🔄 Extracting content for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content with Claude...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content with Claude...
+[youtube] Extracting URL: https://www.youtube.com/watch?v=TVGDny9eneo
+
+🎬 PROCESSING YOUTUBE VIDEO WITH CLAUDE
+🔗 URL: https://www.youtube.com/watch?v=TVGDny9eneo
+📺 Video ID: TVGDny9eneo
+📝 EXTRACTING TRANSCRIPT...
+✅ TRANSCRIPT EXTRACTED:
+   📏 Length: 151 characters
+   📄 Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+   📄 FULL TRANSCRIPT:
+   ----------------------------------------
+   climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+   ----------------------------------------
+📥 DOWNLOADING VIDEO...
+📥 Downloading video with yt-dlp from: https://www.youtube.com/watch?v=TVGDny9eneo
+[youtube] TVGDny9eneo: Downloading webpage
+[youtube] TVGDny9eneo: Downloading android sdkless player API JSON
+[youtube] TVGDny9eneo: Downloading tv client config
+[youtube] TVGDny9eneo: Downloading tv player API JSON
+[youtube] TVGDny9eneo: Downloading web safari player API JSON
+[youtube] TVGDny9eneo: Downloading player 6e4dbefe-main
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] TVGDny9eneo: nsig extraction failed: Some formats may be missing
+         n = 2v3l3MXybmyYYRq1 ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] TVGDny9eneo: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] TVGDny9eneo: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] TVGDny9eneo: Downloading m3u8 information
+[youtube] Extracting URL: https://www.youtube.com/watch?v=TVGDny9eneo
+📹 Video: Humane World for Animals – with Grammy-nominated Sia
+⏱️  Duration: 30s
+[youtube] TVGDny9eneo: Downloading webpage
+[youtube] TVGDny9eneo: Downloading android sdkless player API JSON
+[youtube] TVGDny9eneo: Downloading tv client config
+[youtube] TVGDny9eneo: Downloading tv player API JSON
+[youtube] TVGDny9eneo: Downloading web safari player API JSON
+WARNING: [youtube] Falling back to generic n function search
+         player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+WARNING: [youtube] TVGDny9eneo: nsig extraction failed: Some formats may be missing
+         n = 9Vi5Dw3GdoH0FBVy ; player = https://www.youtube.com/s/player/6e4dbefe/player_ias.vflset/en_US/base.js
+         Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+WARNING: [youtube] TVGDny9eneo: Some web_safari client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+WARNING: [youtube] TVGDny9eneo: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] TVGDny9eneo: Downloading m3u8 information
+[info] TVGDny9eneo: Downloading 1 format(s): 95
+[download] Sleeping 6.00 seconds as required by the site...
+[hlsnative] Downloading m3u8 manifest
+[hlsnative] Total fragments: 6
+[download] Destination: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+[download] 100.0% of ~   1.00KiB at      0.00B/s ETA Unknown (frag 0/6)[download]  50.0% of ~   6.00KiB at      0.00B/s ETA Unknown (frag 0/6)[download]  38.9% of ~  18.00KiB at      0.00B/s ETA Unknown (frag 0/6)[download]  35.7% of ~  42.00KiB at      0.00B/s ETA Unknown (frag 0/6)[download]  34.4% of ~  90.00KiB at      0.00B/s ETA Unknown (frag 0/6)[download]  33.9% of ~ 186.00KiB at  376.30KiB/s ETA Unknown (frag 0/6)[download]  33.6% of ~ 378.00KiB at  376.30KiB/s ETA Unknown (frag 0/6)[download]  33.5% of ~ 762.00KiB at  376.30KiB/s ETA Unknown (frag 0/6)[download]  33.4% of ~   1.49MiB at  376.30KiB/s ETA Unknown (frag 0/6)[download]  21.3% of ~   2.99MiB at  376.30KiB/s ETA Unknown (frag 0/6)[download]   8.3% of ~   7.65MiB at  376.30KiB/s ETA Unknown (frag 1/6)[download]  33.4% of ~   1.91MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  33.4% of ~   1.91MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  33.5% of ~   1.92MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  33.7% of ~   1.93MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  34.1% of ~   1.96MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  34.9% of ~   2.00MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  36.3% of ~   2.10MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  38.8% of ~   2.28MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  35.2% of ~   2.66MiB at    1.63MiB/s ETA Unknown (frag 1/6)[download]  25.3% of ~   3.70MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  50.1% of ~   1.87MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  50.1% of ~   1.87MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  50.2% of ~   1.88MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  50.4% of ~   1.89MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  50.8% of ~   1.90MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  51.6% of ~   1.93MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  53.1% of ~   1.99MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  55.9% of ~   2.12MiB at    1.63MiB/s ETA Unknown (frag 2/6)[download]  60.5% of ~   2.37MiB at    3.37MiB/s ETA Unknown (frag 2/6)[download]  62.9% of ~   2.87MiB at    3.37MiB/s ETA Unknown (frag 2/6)[download]  33.7% of ~   5.35MiB at    3.37MiB/s ETA Unknown (frag 3/6)[download]  66.7% of ~   2.71MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  66.7% of ~   2.71MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  66.8% of ~   2.71MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  67.0% of ~   2.72MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  67.2% of ~   2.73MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  67.8% of ~   2.75MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  68.9% of ~   2.80MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  71.0% of ~   2.89MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  74.8% of ~   3.08MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  81.1% of ~   3.46MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  66.9% of ~   4.21MiB at    4.53MiB/s ETA Unknown (frag 3/6)[download]  49.1% of ~   5.74MiB at    4.53MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  83.4% of ~   3.38MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  83.6% of ~   3.39MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  83.8% of ~   3.40MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  84.2% of ~   3.42MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  85.1% of ~   3.45MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  86.9% of ~   3.53MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  90.1% of ~   3.68MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  95.9% of ~   3.98MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  86.9% of ~   4.58MiB at    5.74MiB/s ETA Unknown (frag 4/6)[download]  64.5% of ~   6.17MiB at    5.74MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    6.97MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    6.97MiB/s ETA Unknown (frag 5/6)[download] 100.0% of ~   3.98MiB at    6.97MiB/s ETA Unknown (frag 5/6)[download]  99.9% of ~   3.98MiB at    6.97MiB/s ETA Unknown (frag 6/6)[download] 100% of    3.98MiB in 00:00:00 at 9.72MiB/s                 
+WARNING: TVGDny9eneo: Possible MPEG-TS in MP4 container or malformed AAC timestamps. Install ffmpeg to fix this automatically
+[h264 @ 0x12bf2a890] co located POCs unavailable
+[h264 @ 0x12bf2a890] co located POCs unavailable
+[h264 @ 0x12bf31d90] co located POCs unavailable
+[h264 @ 0x12bf2a890] co located POCs unavailable
+[h264 @ 0x12bf2a890] Missing reference picture, default is 0
+[h264 @ 0x12bf2a890] decode_slice_header error
+[h264 @ 0x12bf31d90] reference picture missing during reorder
+[h264 @ 0x12bf31d90] reference picture missing during reorder
+[h264 @ 0x12bf31d90] reference picture missing during reorder
+[h264 @ 0x12bf31d90] reference picture missing during reorder
+[h264 @ 0x12bf31d90] Missing reference picture, default is 0
+[h264 @ 0x12bf31d90] decode_slice_header error
+[h264 @ 0x12bf3a5f0] Missing reference picture, default is 65558
+[h264 @ 0x12c044840] mmco: unref short failure
+✅ Video downloaded: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+🎬 EXTRACTING FRAMES EVERY 5 SECONDS...
+🎬 Extracting frames every 5 seconds from video file...
+📊 Video duration: 30s, will extract 6 frames
+📊 Video info: 722 frames, 23.976023976023978 FPS
+📸 Frame 1: 0s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_1_0s.jpg
+📸 Frame 2: 5s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_2_5s.jpg
+📸 Frame 3: 10s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_3_10s.jpg
+📸 Frame 4: 15s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_4_15s.jpg
+📸 Frame 5: 20s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_5_20s.jpg
+📸 Frame 6: 25s (size: (720, 1280, 3))
+💾 Saved frame to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/frame_6_25s.jpg
+✅ Extracted 6 frames from video
+🧠 PROCESSING TRANSCRIPT WITH CLAUDE...
+🧠 Using Claude to analyze transcript for bias...
+❌ Claude API error: 404 - {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"},"request_id":"req_011CUVGV3HzbQmeGnp8hc14x"}
+⚠️ Claude transcript analysis failed
+🗑️ Cleaned up video file: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames/TVGDny9eneo.mp4
+✅ PROCESSING COMPLETE!
+   📝 Transcript: 151 chars
+   🎬 Frames: 6 extracted (every 5 seconds)
+   📊 Metadata: Humane World for Animals – with Grammy-nominated Sia
+   💾 Frame images saved to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/extracted_frames
+==================================================
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully with Claude
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully with Claude
+INFO:     [ingestion_agent]:    ✅ TRANSCRIPT EXTRACTED:
+INFO:     [ingestion_agent]:    ✅ TRANSCRIPT EXTRACTED:
+INFO:     [ingestion_agent]:       Length: 151 characters
+INFO:     [ingestion_agent]:       Length: 151 characters
+INFO:     [ingestion_agent]:       Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+INFO:     [ingestion_agent]:       Preview: climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]...
+INFO:     [ingestion_agent]:    📄 FULL TRANSCRIPT:
+INFO:     [ingestion_agent]:    📄 FULL TRANSCRIPT:
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+INFO:     [ingestion_agent]:    climbing up on S heel I could see the City Light my heart going bone bo bo hey he said grab your things I come to take you home look going take [Music]
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    ----------------------------------------
+INFO:     [ingestion_agent]:    💾 TRANSCRIPT SAVED to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/transcript_TVGDny9eneo.txt
+INFO:     [ingestion_agent]:    💾 TRANSCRIPT SAVED to: /Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/../extracted_frames/transcript_TVGDny9eneo.txt
+INFO:     [ingestion_agent]:    ✅ CLAUDE-SELECTED BIAS-RELEVANT FRAMES:
+INFO:     [ingestion_agent]:    ✅ CLAUDE-SELECTED BIAS-RELEVANT FRAMES:
+INFO:     [ingestion_agent]:       Count: 6 frames
+INFO:     [ingestion_agent]:       Count: 6 frames
+INFO:     [ingestion_agent]:       Size: (720, 1280, 3)
+INFO:     [ingestion_agent]:       Size: (720, 1280, 3)
+INFO:     [ingestion_agent]:       Format: numpy arrays (BGR, ready for analysis)
+INFO:     [ingestion_agent]:       Format: numpy arrays (BGR, ready for analysis)
+INFO:     [ingestion_agent]:       Selection: Claude identified most bias-relevant frames
+INFO:     [ingestion_agent]:       Selection: Claude identified most bias-relevant frames
 INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
 INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-INFO:     [ingestion_agent]: ✅ Content preprocessed for request 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: ✅ Content preprocessed for request 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: 🧠 Generating embeddings for request 687791fa-5367-47c1-81e4-2b37da780532...
-INFO:     [ingestion_agent]: 🧠 Generating embeddings for request 687791fa-5367-47c1-81e4-2b37da780532...
-INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
-INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.40it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.40it/s]
-INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
-INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
-INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
-INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
-INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 38.82it/s]
-INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
-INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
-INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
-INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
-INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
-INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
-INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
-INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]:    - Text embedding: True
-INFO:     [ingestion_agent]:    - Text embedding: True
-INFO:     [ingestion_agent]:    - Visual embedding: True
-INFO:     [ingestion_agent]:    - Visual embedding: True
-INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: 687791fa-5367-47c1-81e4-2b37da780532
-INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: ✅ Content extracted for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: ✅ Content extracted for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: 🧠 Claude preprocessing for request 77c2eac6-c331-48c7-bdb9-2d2a9717955d...
+INFO:     [ingestion_agent]: ✅ Claude preprocessing already done during YouTube extraction - using existing analysis
+INFO:     [ingestion_agent]: ✅ Claude preprocessing already done during YouTube extraction - using existing analysis
+INFO:     [ingestion_agent]: 🖼️  Converting 6 Claude-selected frames to base64...
+INFO:     [ingestion_agent]: 🖼️  Converting 6 Claude-selected frames to base64...
+INFO:     [ingestion_agent]: ✅ Claude-selected frames converted to base64
+INFO:     [ingestion_agent]: ✅ Claude-selected frames converted to base64
 INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
 INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
-INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
-INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
-INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
-INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing TEXT content to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing TEXT content to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]:    - Text length: 151 characters
+INFO:     [ingestion_agent]:    - Text length: 151 characters
+INFO:     [ingestion_agent]: 📤 Routing VISUAL content to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing VISUAL content to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]:    - Frames count: 6
+INFO:     [ingestion_agent]:    - Frames count: 6
 INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
 INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
+INFO:     [ingestion_agent]: ✅ Request 77c2eac6-c331-48c7-bdb9-2d2a9717955d processed successfully
+INFO:     [ingestion_agent]: ✅ Request 77c2eac6-c331-48c7-bdb9-2d2a9717955d processed successfully

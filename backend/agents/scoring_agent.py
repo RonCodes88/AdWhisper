@@ -18,6 +18,10 @@ from typing import Optional, Dict, Any, List
 from enum import Enum
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))

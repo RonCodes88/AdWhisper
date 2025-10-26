@@ -37,7 +37,7 @@ async def startup_event():
 
 # Configuration
 ENABLE_AGENT_CALLS = True  # Set to False to disable agent communication
-INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8101/process-youtube"  # Matches YouTube ingestion agent endpoint
+INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/analyze"  # Ingestion agent REST endpoint
 
 
 def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):
@@ -56,6 +56,7 @@ def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str
         # Format payload for YouTube ingestion agent
         formatted_payload = {
             "request_id": ingestion_payload["request_id"],
+            "content_type": ingestion_payload.get("content_type", "video"),
             "video_url": ingestion_payload.get("video_url"),
             "metadata": ingestion_payload.get("metadata", {})
         }
@@ -71,11 +72,11 @@ def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS - YouTube Agent responded!")
-            print(f"📨 Success: {result.get('success', 'unknown')}")
-            print(f"📝 Transcript: {len(result.get('transcript', ''))} chars")
-            print(f"🎬 Frames: {result.get('num_frames', 0)}")
-            print(f"🧠 Claude Analysis: {'✅' if result.get('transcript_analysis') else '❌'}")
+            print(f"✅ SUCCESS - Ingestion Agent responded!")
+            print(f"📨 Status: {result.get('status', 'unknown')}")
+            print(f"💬 Message: {result.get('message', 'No message')}")
+            print(f"🆔 Request ID: {result.get('request_id', request_id)}")
+            print(f"📊 Agent is now processing YouTube video and routing to bias analysis agents...")
         else:
             print(f"⚠️ WARNING - YouTube Agent returned HTTP {response.status_code}")
             print(f"Response: {response.text[:500]}")
@@ -156,11 +157,9 @@ async def analyze_youtube_video(request: YouTubeAnalysisRequest, background_task
                 ingestion_payload
             )
             agent_contacted = True
-            agent_error = None
         else:
             print(f"\n⏭️  Skipping agent call (ENABLE_AGENT_CALLS = False)")
             agent_contacted = False
-            agent_error = "Agent calls disabled"
         
         # Build response
         print(f"\n📦 Building response to frontend...")

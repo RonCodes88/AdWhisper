@@ -55,7 +55,8 @@ class EmbeddingPackage(Model):
     text_content: Optional[str] = None  # Original text for context
     text_embedding: Optional[List[float]] = None
     visual_embedding: Optional[List[float]] = None
-    chromadb_collection_id: str
+    frames_base64: Optional[List[str]] = None  # Base64-encoded video frames
+    chromadb_collection_id: Optional[str] = None  # Optional - agents can use request_id if None
     content_type: ContentType
     metadata: Optional[Dict[str, Any]] = None
     timestamp: str = ""

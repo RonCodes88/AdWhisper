@@ -17,6 +17,10 @@ from typing import Optional, Dict, Any, List
 from enum import Enum
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Note: Embedding models are now handled by individual agents
 
@@ -314,6 +318,20 @@ async def extract_content(ctx: Context, content: AdContentRequest) -> Dict[str, 
                     ctx.logger.info(f"   {'-' * 40}")
                     ctx.logger.info(f"   {transcript_text}")
                     ctx.logger.info(f"   {'-' * 40}")
+                    
+                    # Save transcript to extracted_frames folder
+                    video_id = youtube_data.get("video_id", "unknown")
+                    frames_dir = os.path.join(os.path.dirname(__file__), "..", "extracted_frames")
+                    os.makedirs(frames_dir, exist_ok=True)
+                    transcript_filename = f"transcript_{video_id}.txt"
+                    transcript_path = os.path.join(frames_dir, transcript_filename)
+                    
+                    try:
+                        with open(transcript_path, 'w', encoding='utf-8') as f:
+                            f.write(transcript_text)
+                        ctx.logger.info(f"   💾 TRANSCRIPT SAVED to: {transcript_path}")
+                    except Exception as e:
+                        ctx.logger.error(f"   ❌ Failed to save transcript: {e}")
                 else:
                     ctx.logger.warning(f"   - No transcript available")
 
@@ -371,17 +389,64 @@ async def claude_preprocess_content(ctx: Context, extracted_data: Dict[str, Any]
     """
     Use Claude to preprocess the extracted content (as per architecture diagram).
     This is where Claude analyzes and prepares the content for the bias agents.
-    Throws errors if Claude preprocessing fails - no fallback mode.
+
+    NOTE: For YouTube videos, Claude analysis is already done in extract_youtube_content_with_claude,
+    so we skip additional preprocessing to avoid redundancy and REST context limitations.
     """
-    ctx.logger.info(f"🧠 Claude preprocessing content for request {request_id}...")
-    
+    ctx.logger.info(f"🧠 Claude preprocessing for request {request_id}...")
+
+    # Check if we already have Claude analysis from YouTube extraction
+    if extracted_data.get("metadata", {}).get("youtube", {}).get("claude_processed"):
+        ctx.logger.info(f"✅ Claude preprocessing already done during YouTube extraction - using existing analysis")
+
+        # Use the already-processed content
+        preprocessed = {
+            "text": extracted_data.get("text"),
+            "image_url": extracted_data.get("image_url"),
+            "video_url": extracted_data.get("video_url"),
+            "frames": extracted_data.get("frames", []),
+            "metadata": extracted_data.get("metadata", {})
+        }
+
+        # Add preprocessing status to metadata
+        preprocessed["metadata"]["claude_preprocessing"] = {
+            "preprocessing_status": "completed_with_youtube_extraction",
+            "processed_at": datetime.now(UTC).isoformat()
+        }
+
+        return preprocessed
+
+    # For non-YouTube content or if we need additional preprocessing via agent communication
+    # Check if we have the send_and_wait capability (not available in REST context)
+    if not hasattr(ctx, 'send_and_wait'):
+        ctx.logger.warning(f"⚠️ Agent communication not available in REST context - skipping additional Claude preprocessing")
+        ctx.logger.info(f"✅ Using extracted content as-is (Claude preprocessing skipped)")
+
+        preprocessed = {
+            "text": extracted_data.get("text"),
+            "image_url": extracted_data.get("image_url"),
+            "video_url": extracted_data.get("video_url"),
+            "frames": extracted_data.get("frames", []),
+            "metadata": extracted_data.get("metadata", {})
+        }
+
+        preprocessed["metadata"]["claude_preprocessing"] = {
+            "preprocessing_status": "skipped_rest_context",
+            "processed_at": datetime.now(UTC).isoformat()
+        }
+
+        return preprocessed
+
+    # Full agent-based preprocessing (for protocol messages with full context)
+    ctx.logger.info(f"📤 Sending content to Claude agent for preprocessing...")
+
     # Check if API keys are configured
     if not ANTHROPIC_API_KEY:
         raise Exception("ANTHROPIC_API_KEY not configured. Claude preprocessing requires Anthropic API key.")
-    
+
     if not AGENTVERSE_API_KEY:
         raise Exception("AGENTVERSE_API_KEY not configured. Agent communication requires Agentverse API key.")
-    
+
     # Prepare Claude request
     claude_request = ClaudePreprocessRequest(
         request_id=request_id,
@@ -392,27 +457,22 @@ async def claude_preprocess_content(ctx: Context, extracted_data: Dict[str, Any]
         content_type="youtube_video" if extracted_data.get("video_url") else "text",
         metadata=extracted_data.get("metadata", {})
     )
-    
-    ctx.logger.info(f"📤 Sending content to Claude for preprocessing...")
-    ctx.logger.info(f"   - Text length: {len(extracted_data.get('text', ''))} chars")
-    ctx.logger.info(f"   - Frames count: {len(extracted_data.get('frames', []))}")
-    ctx.logger.info(f"   - Image URL: {extracted_data.get('image_url', 'None')}")
-    
+
     # Send to Claude agent and wait for response
     claude_response = await ctx.send_and_wait(
-        CLAUDE_AGENT, 
-        claude_request, 
-        timeout=30.0, 
+        CLAUDE_AGENT,
+        claude_request,
+        timeout=30.0,
         response_type=ClaudePreprocessResponse
     )
-    
+
     if not claude_response:
         raise Exception(f"Claude preprocessing timed out after 30 seconds for request {request_id}")
-    
-    ctx.logger.info(f"✅ Claude preprocessing completed successfully")
+
+    ctx.logger.info(f"✅ Claude agent preprocessing completed successfully")
     ctx.logger.info(f"   - Confidence score: {claude_response.confidence_score}")
     ctx.logger.info(f"   - Processing time: {claude_response.processing_time_ms}ms")
-    
+
     # Use Claude's processed content
     preprocessed = {
         "text": claude_response.processed_text or extracted_data.get("text"),
@@ -421,7 +481,7 @@ async def claude_preprocess_content(ctx: Context, extracted_data: Dict[str, Any]
         "frames": extracted_data.get("frames", []),
         "metadata": extracted_data.get("metadata", {})
     }
-    
+
     # Add Claude preprocessing results to metadata
     preprocessed["metadata"]["claude_preprocessing"] = {
         "processed_at": claude_response.timestamp,
@@ -430,9 +490,9 @@ async def claude_preprocess_content(ctx: Context, extracted_data: Dict[str, Any]
         "text_analysis": claude_response.text_analysis,
         "visual_analysis": claude_response.visual_analysis,
         "preprocessing_notes": claude_response.preprocessing_notes,
-        "preprocessing_status": "completed_with_claude"
+        "preprocessing_status": "completed_with_claude_agent"
     }
-    
+
     return preprocessed
 
 

@@ -8,7 +8,7 @@ set -e
 BACKEND_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$BACKEND_DIR"
 
-PYTHON="./advenv/bin/python"
+PYTHON="./adwhisper/bin/python"
 LOGS_DIR="./logs"
 
 # Create logs directory if it doesn't exist
@@ -54,10 +54,10 @@ echo "║          ✅ All Agents Started Successfully                  ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Agent Endpoints:"
-echo "  • Ingestion Agent:     http://localhost:8100/ingest"
-echo "  • Text Bias Agent:     http://localhost:8101"
-echo "  • Visual Bias Agent:   http://localhost:8102"
-echo "  • Scoring Agent:       http://localhost:8103"
+echo "  • Ingestion Agent:     http://localhost:8100/analyze"
+echo "  • Text Bias Agent:     http://localhost:8101/submit"
+echo "  • Visual Bias Agent:   http://localhost:8102/submit"
+echo "  • Scoring Agent:       http://localhost:8103/submit"
 echo ""
 echo "Logs Location: $LOGS_DIR/"
 echo ""

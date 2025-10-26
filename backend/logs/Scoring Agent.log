@@ -1,3 +1,6 @@
+WARNING:  [ingestion_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [ingestion_agent]: Endpoint /submit is reserved
+WARNING:  [ingestion_agent]: Discarding duplicate REST endpoint: POST /submit
 WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
 WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
 WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
@@ -49,13 +52,13 @@ INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/in
 INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
 INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
 INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
+INFO:     [ingestion_agent]: Manifest published successfully: claude_preprocess_protocol
 INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
 INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
-INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
-INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
 INFO:     [uagents.registration]: Registration on Almanac API successful
-INFO:     [uagents.registration]: Registering on almanac contract...
-INFO:     [uagents.registration]: Registering on almanac contract...complete
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
