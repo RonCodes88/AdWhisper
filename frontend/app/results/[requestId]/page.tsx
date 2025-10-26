@@ -195,33 +195,7 @@ export default function ResultsPage() {
               </section>
             )}
 
-            {/* Statistics */}
-            <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-foreground mb-1">
-                  {results.total_issues || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Total Issues</p>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-red-600 mb-1">
-                  {results.high_severity_count || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">High Severity</p>
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-yellow-600 mb-1">
-                  {results.medium_severity_count || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Medium Severity</p>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-blue-600 mb-1">
-                  {results.low_severity_count || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Low Severity</p>
-              </div>
-            </section>
+           
 
             {/* Top Concerns */}
             {results.top_concerns && results.top_concerns.length > 0 && (
