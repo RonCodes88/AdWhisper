@@ -8,11 +8,9 @@ import { LoadingSpinner } from "@/app/components/LoadingSpinner";
 export default function UploadPage() {
   const router = useRouter();
   const [dragActive, setDragActive] = useState(false);
-  const [textContent, setTextContent] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -55,11 +53,10 @@ export default function UploadPage() {
 
   const handleSubmit = async () => {
     setError(null);
-    setSuccess(null);
 
     // Validation
-    if (!textContent.trim() && !selectedFile) {
-      setError("Please provide text content or upload a file");
+    if (!selectedFile) {
+      setError("Please upload a file");
       return;
     }
 
@@ -67,10 +64,6 @@ export default function UploadPage() {
 
     try {
       const params: any = {};
-
-      if (textContent.trim()) {
-        params.textContent = textContent;
-      }
 
       if (selectedFile) {
         const isImage = selectedFile.type.startsWith("image/");
@@ -85,12 +78,8 @@ export default function UploadPage() {
 
       const response = await submitAd(params);
 
-      setSuccess("Analysis started successfully!");
-
-      // Redirect to results page after a brief delay
-      setTimeout(() => {
-        router.push(`/results/${response.request_id}`);
-      }, 1000);
+      // Redirect to results page
+      router.push(`/results/${response.request_id}`);
     } catch (err: any) {
       setError(err.message || "Failed to submit ad for analysis");
       setIsUploading(false);
@@ -110,144 +99,157 @@ export default function UploadPage() {
           <div className="h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0 w-px"></div>
           <div className="h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0 w-px"></div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <span className="text-red-600 text-xl">⚠️</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-900">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
-            >
-              ✕
-            </button>
+          {/* Main Content */}
+          <main className="w-full flex-1 flex items-start justify-center px-0 pt-24 sm:pt-28 md:pt-32 lg:pt-40 pb-12 relative z-10">
+            <div className="w-full max-w-2xl px-4 sm:px-6 md:px-8 lg:px-0">
+              {/* Page Title */}
+              <div className="text-center mb-12">
+            <h2 className="text-[40px] font-bold text-foreground mb-3 leading-tight font-serif">
+              Analyze your ad
+            </h2>
+            <p className="text-muted-foreground text-base font-sans">
+              Upload your ad for instant bias detection and<br />
+              actionable recommendations
+            </p>
           </div>
-        )}
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-            <span className="text-green-600 text-xl">✓</span>
-            <p className="text-sm font-medium text-green-900">{success}</p>
-          </div>
-        )}
-
-        {/* Text Content Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Ad Text Content (Optional)
-          </label>
-          <textarea
-            value={textContent}
-            onChange={(e) => setTextContent(e.target.value)}
-            placeholder="Paste your ad copy, script, or description here..."
-            className="w-full h-32 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            disabled={isUploading}
-          />
-        </div>
-
-        {/* File Upload Area */}
-        <div
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            dragActive
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50"
-          } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          {!selectedFile && (
-            <>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={isUploading}
-              />
-
-              <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-muted-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
+          {/* Upload Card */}
+          <div className="bg-card border border-border rounded-xl shadow-sm p-8 mb-6">
+            {/* Upload Section */}
+            <div className="mb-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-6 h-6 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-
-                <div>
-                  <p className="text-lg font-medium text-foreground mb-2">
-                    {dragActive ? "Drop file here" : "Drag and drop file here"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    or click to browse files
-                  </p>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                  Supports: Images (JPG, PNG, GIF, WEBP) and Videos (MP4, MOV,
-                  AVI, WEBM)
-                  <br />
-                  Max file size: 50MB
-                </div>
-              </div>
-            </>
-          )}
-
-          {selectedFile && (
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
-                  {selectedFile.type.startsWith("image/") ? "🖼️" : "🎥"}
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatFileSize(selectedFile.size)}
+                <div className="flex-1">
+                  <h3 className="text-[15px] font-semibold text-foreground mb-1 font-sans">
+                    Image or Video Upload
+                  </h3>
+                  <p className="text-sm text-muted-foreground font-sans">
+                    Upload a file to analyze for bias
                   </p>
                 </div>
               </div>
-              <button
-                onClick={clearFile}
-                className="px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                disabled={isUploading}
-              >
-                Remove
-              </button>
+
+              {/* File Upload Area */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-foreground mb-2 font-sans">
+                  Upload File
+                </label>
+                <div
+                  className={`relative border-2 border-dashed rounded-lg transition-all ${
+                    dragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-muted/30 hover:border-border/60"
+                  } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  {!selectedFile ? (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        disabled={isUploading}
+                      />
+                      <div className="px-6 py-8 text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6 text-muted-foreground"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-foreground mb-1 font-sans">
+                          <span className="font-medium">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-muted-foreground font-sans">
+                          Images (JPG, PNG, GIF, WEBP) or Videos (MP4, MOV, AVI, WEBM)
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1 font-sans">Max file size: 50MB</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="px-6 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-xl">
+                          {selectedFile.type.startsWith("image/") ? "🖼️" : "🎥"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground font-sans">
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-sans">
+                            {formatFileSize(selectedFile.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={clearFile}
+                        className="text-sm text-destructive hover:text-destructive/80 font-medium transition-colors font-sans"
+                        disabled={isUploading}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Submit Button */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={handleSubmit}
-            disabled={isUploading || (!textContent.trim() && !selectedFile)}
-            className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
-          >
-            {isUploading ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" />
-                Uploading...
-              </span>
-            ) : (
-              "Start Analysis"
-            )}
-          </button>
+            {/* Analyze Button */}
+            <button
+              onClick={handleSubmit}
+              disabled={isUploading || !selectedFile}
+              className="w-full py-3 px-4 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed font-sans"
+            >
+              {isUploading ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span>Analyze for bias</span>
+                </>
+              )}
+            </button>
+          </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+                  <span className="text-destructive text-lg">⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-destructive font-sans">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-destructive hover:text-destructive/80 text-sm font-medium font-sans"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          </main>
         </div>
       </div>
     </div>
