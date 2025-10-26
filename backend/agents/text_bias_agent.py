@@ -82,54 +82,74 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Text Bias Agent shutting down...")
 
 
-@text_bias_protocol.on_message(model=EmbeddingPackage, replies={BiasAnalysisComplete, AgentError})
-async def handle_text_analysis(ctx: Context, sender: str, msg: EmbeddingPackage):
+@text_bias_agent.on_rest_post("/analyze", EmbeddingPackage, BiasAnalysisComplete)
+async def handle_text_analysis_rest(ctx: Context, req: EmbeddingPackage) -> BiasAnalysisComplete:
     """
-    Analyze text content for bias using ASI:ONE LLM and RAG retrieval.
+    REST endpoint for text bias analysis.
+    Analyzes text content for bias and returns results.
     """
+    ctx.logger.info("=" * 80)
+    ctx.logger.info("🎯 TEXT BIAS AGENT - REST REQUEST RECEIVED")
+    ctx.logger.info("=" * 80)
+
     try:
-        ctx.logger.info(f"📨 Received content for text analysis: {msg.request_id}")
-        ctx.logger.info(f"   - Has text content: {msg.text_content is not None}")
-        ctx.logger.info(f"   - Has text embedding: {msg.text_embedding is not None}")
+        ctx.logger.info(f"📨 Received REST request for text analysis")
+        ctx.logger.info(f"   📝 Request ID: {req.request_id}")
+        ctx.logger.info(f"   📄 Has text content: {req.text_content is not None}")
+        ctx.logger.info(f"   🔢 Has text embedding: {req.text_embedding is not None}")
+
+        if req.text_content:
+            ctx.logger.info(f"   📏 Text length: {len(req.text_content)} characters")
+            ctx.logger.info(f"   📖 Text preview: {req.text_content[:100]}...")
+        else:
+            ctx.logger.warning(f"   ⚠️ Text content is None or empty!")
 
         # Check if we have text to analyze
-        if not msg.text_content:
-            ctx.logger.warning(f"⚠️ No text content for request {msg.request_id}")
-            error_msg = AgentError(
-                request_id=msg.request_id,
-                agent_name="text_bias_agent",
-                error_type="no_content",
-                error_message="No text content provided"
+        if not req.text_content:
+            ctx.logger.error(f"❌ No text content for request {req.request_id}")
+            # Return error response
+            return BiasAnalysisComplete(
+                request_id=req.request_id,
+                sender_agent="text_bias_agent",
+                report={
+                    "request_id": req.request_id,
+                    "agent_name": "text_bias_agent",
+                    "error": "No text content provided"
+                }
             )
-            await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
-            return
 
-        ctx.logger.info(f"📝 Text length: {len(msg.text_content)} characters")
+        ctx.logger.info(f"✅ Text content validated - length: {len(req.text_content)} characters")
 
         # Step 1: Initial text analysis
-        ctx.logger.info(f"🔍 Starting bias detection analysis...")
-        initial_analysis = await analyze_text_with_llm(ctx, msg.text_content)
+        ctx.logger.info(f"🔍 STEP 1: Starting bias detection analysis...")
+        initial_analysis = await analyze_text_with_llm(ctx, req.text_content)
+        ctx.logger.info(f"   ✅ Initial analysis complete")
+        ctx.logger.info(f"   📊 Potential biases: {initial_analysis.get('potential_biases', [])}")
 
         # Step 2: RAG RETRIEVAL - Query ChromaDB for similar patterns
-        ctx.logger.info(f"🔎 RAG RETRIEVAL: Querying ChromaDB for similar text patterns...")
-        rag_results = await query_bias_knowledge_base(ctx, msg.text_embedding, msg.chromadb_collection_id)
-        ctx.logger.info(f"✅ Found {len(rag_results)} similar cases from knowledge base")
+        ctx.logger.info(f"🔎 STEP 2: RAG RETRIEVAL - Querying ChromaDB...")
+        rag_results = await query_bias_knowledge_base(ctx, req.text_embedding, req.chromadb_collection_id)
+        ctx.logger.info(f"   ✅ Found {len(rag_results)} similar cases from knowledge base")
 
         # Step 3: Classify and extract bias types
-        ctx.logger.info(f"🏷️ Classifying detected bias types...")
+        ctx.logger.info(f"🏷️ STEP 3: Classifying detected bias types...")
         bias_instances = await classify_and_extract_biases(ctx, initial_analysis, rag_results)
+        ctx.logger.info(f"   ✅ Classified {len(bias_instances)} bias instances")
 
         # Step 4: Calculate overall text bias score
-        ctx.logger.info(f"📊 Calculating overall text bias score...")
+        ctx.logger.info(f"📊 STEP 4: Calculating overall text bias score...")
         text_score = await calculate_text_score(ctx, bias_instances)
+        ctx.logger.info(f"   ✅ Text score calculated: {text_score:.2f}/10")
 
         # Step 5: Generate recommendations
-        ctx.logger.info(f"💡 Generating recommendations...")
+        ctx.logger.info(f"💡 STEP 5: Generating recommendations...")
         recommendations = await generate_recommendations(ctx, bias_instances)
+        ctx.logger.info(f"   ✅ Generated {len(recommendations)} recommendations")
 
         # Step 6: Create report
+        ctx.logger.info(f"📋 STEP 6: Creating bias report...")
         report = TextBiasReport(
-            request_id=msg.request_id,
+            request_id=req.request_id,
             agent_name="text_bias_agent",
             bias_detected=len(bias_instances) > 0,
             bias_instances=bias_instances,
@@ -137,21 +157,61 @@ async def handle_text_analysis(ctx: Context, sender: str, msg: EmbeddingPackage)
             recommendations=recommendations,
             rag_similar_cases=[ref["id"] for ref in rag_results]
         )
+        ctx.logger.info(f"   ✅ Report created")
 
-        ctx.logger.info(f"✅ Analysis complete: Score={text_score:.1f}, Issues={len(bias_instances)}")
+        ctx.logger.info(f"🎉 Analysis complete!")
+        ctx.logger.info(f"   📊 Overall Score: {text_score:.1f}/10")
+        ctx.logger.info(f"   🚨 Bias detected: {len(bias_instances) > 0}")
+        ctx.logger.info(f"   📝 Issues found: {len(bias_instances)}")
+        ctx.logger.info(f"   💡 Recommendations: {len(recommendations)}")
 
-        # Step 7: Send report to Scoring Agent
-        await send_to_scoring_agent(ctx, msg.request_id, report)
+        # Step 7: Send results to Scoring Agent (async in background)
+        ctx.logger.info(f"📤 STEP 7: Sending results to Scoring Agent...")
+        ctx.logger.info(f"   🎯 Scoring Agent Address: {SCORING_AGENT_ADDRESS}")
+        await send_to_scoring_agent(ctx, req.request_id, report)
+        ctx.logger.info(f"   ✅ Results sent successfully!")
+
+        # Return response to REST caller
+        response = BiasAnalysisComplete(
+            request_id=req.request_id,
+            sender_agent="text_bias_agent",
+            report={
+                "request_id": report.request_id,
+                "agent_name": report.agent_name,
+                "bias_detected": report.bias_detected,
+                "bias_instances": report.bias_instances,
+                "overall_text_score": report.overall_text_score,
+                "recommendations": report.recommendations,
+                "rag_similar_cases": report.rag_similar_cases,
+                "timestamp": report.timestamp
+            }
+        )
+        ctx.logger.info(f"✅ Returning response to REST caller")
+        ctx.logger.info("=" * 80)
+        return response
 
     except Exception as e:
-        ctx.logger.error(f"❌ Error analyzing text: {e}")
-        error_msg = AgentError(
-            request_id=msg.request_id,
-            agent_name="text_bias_agent",
-            error_type="analysis_error",
-            error_message=str(e)
+        ctx.logger.error("=" * 80)
+        ctx.logger.error(f"❌ ERROR IN TEXT BIAS AGENT")
+        ctx.logger.error("=" * 80)
+        ctx.logger.error(f"   Request ID: {req.request_id}")
+        ctx.logger.error(f"   Error: {e}")
+        ctx.logger.error(f"   Type: {type(e).__name__}")
+        import traceback
+        ctx.logger.error(f"   Traceback:\n{traceback.format_exc()}")
+        ctx.logger.error("=" * 80)
+
+        # Return error response
+        return BiasAnalysisComplete(
+            request_id=req.request_id,
+            sender_agent="text_bias_agent",
+            report={
+                "request_id": req.request_id,
+                "agent_name": "text_bias_agent",
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
         )
-        await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
 
 
 async def analyze_text_with_llm(ctx: Context, text: str) -> Dict[str, Any]:

@@ -24,4 +24,5 @@ pytube
 # Utilities
 python-dotenv
 requests
+aiohttp
 pydantic

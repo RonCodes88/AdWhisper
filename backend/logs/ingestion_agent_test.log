@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/ronaldli/Desktop/Projects/calhacks2/AdWhisper/backend/agents/ingestion_agent.py", line 13, in <module>
+    from uagents import Agent, Context, Model, Protocol
+ModuleNotFoundError: No module named 'uagents'

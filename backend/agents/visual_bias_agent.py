@@ -143,81 +143,113 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Visual Bias Agent shutting down...")
 
 
-@visual_bias_protocol.on_message(model=EmbeddingPackage, replies={BiasAnalysisComplete, AgentError})
-async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackage):
+@visual_bias_agent.on_rest_post("/analyze", EmbeddingPackage, BiasAnalysisComplete)
+async def handle_visual_analysis_rest(ctx: Context, req: EmbeddingPackage) -> BiasAnalysisComplete:
     """
-    Analyze visual content for bias using Vision-LLM and RAG retrieval.
+    REST endpoint for visual bias analysis.
+    Analyzes visual content for bias and returns results.
     """
+    ctx.logger.info("=" * 80)
+    ctx.logger.info("🎯 VISUAL BIAS AGENT - REST REQUEST RECEIVED")
+    ctx.logger.info("=" * 80)
+
     try:
-        ctx.logger.info(f"📨 Received embedding package for visual analysis: {msg.request_id}")
-        ctx.logger.info(f"   - Has visual embedding: {msg.visual_embedding is not None}")
+        ctx.logger.info(f"📨 Received REST request for visual analysis")
+        ctx.logger.info(f"   📝 Request ID: {req.request_id}")
+        ctx.logger.info(f"   🔢 Has visual embedding: {req.visual_embedding is not None}")
+        ctx.logger.info(f"   🖼️  Has frames: {req.frames_base64 is not None and len(req.frames_base64 or []) > 0}")
+
+        if req.frames_base64:
+            ctx.logger.info(f"   📊 Number of frames: {len(req.frames_base64)}")
+            ctx.logger.info(f"   📏 First frame size: {len(req.frames_base64[0]) if req.frames_base64 else 0} bytes")
+        else:
+            ctx.logger.warning(f"   ⚠️ No frames in base64 format!")
 
         # Extract media info from metadata
-        media_url = msg.metadata.get("image_url") if msg.metadata else None
-        if not media_url and msg.metadata:
-            media_url = msg.metadata.get("youtube", {}).get("thumbnail_url") if isinstance(msg.metadata.get("youtube"), dict) else None
+        ctx.logger.info(f"🔍 Extracting media information from metadata...")
+        media_url = req.metadata.get("image_url") if req.metadata else None
+        if not media_url and req.metadata:
+            media_url = req.metadata.get("youtube", {}).get("thumbnail_url") if isinstance(req.metadata.get("youtube"), dict) else None
 
-        media_type = "image" if media_url else "video"
-        ctx.logger.info(f"🎨 Media type: {media_type}, URL: {media_url}")
-        
+        media_type = "video" if req.frames_base64 else "image"
+        ctx.logger.info(f"   🎨 Media type: {media_type}")
+        ctx.logger.info(f"   🔗 Media URL: {media_url}")
+
         # Check if we have visual content to analyze
-        if not msg.visual_embedding and not media_url:
-            ctx.logger.warning(f"⚠️ No visual content for request {msg.request_id}")
-            error_msg = AgentError(
-                request_id=msg.request_id,
-                agent_name="visual_bias_agent",
-                error_type="no_content",
-                error_message="No visual content provided"
+        has_frames = req.frames_base64 and len(req.frames_base64) > 0
+        ctx.logger.info(f"   ✅ Has frames: {has_frames}")
+
+        if not has_frames and not media_url:
+            ctx.logger.error(f"❌ No visual content for request {req.request_id}")
+            # Return error response
+            return BiasAnalysisComplete(
+                request_id=req.request_id,
+                sender_agent="visual_bias_agent",
+                report={
+                    "request_id": req.request_id,
+                    "agent_name": "visual_bias_agent",
+                    "error": "No visual content provided"
+                }
             )
-            await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
-            return
+
+        ctx.logger.info(f"✅ Visual content validated")
 
         # Step 1: Extract visual features
-        ctx.logger.info(f"🔍 Extracting visual features...")
+        ctx.logger.info(f"🔍 STEP 1: Extracting visual features...")
         if media_type == "video" and media_url:
             visual_frames = await extract_video_keyframes(ctx, media_url)
-            ctx.logger.info(f"🎬 Extracted {len(visual_frames)} keyframes from video")
+            ctx.logger.info(f"   🎬 Extracted {len(visual_frames)} keyframes from video")
         elif media_url:
             visual_frames = [media_url]
+            ctx.logger.info(f"   🖼️  Using single image URL")
         else:
             visual_frames = []
+            ctx.logger.info(f"   📦 Using {len(req.frames_base64)} base64 frames")
 
         # Step 2: Analyze visual content with Vision-LLM
-        ctx.logger.info(f"👁️ Analyzing visual content with Vision-LLM...")
+        ctx.logger.info(f"👁️ STEP 2: Analyzing visual content with Vision-LLM...")
         initial_analysis = await analyze_visual_with_llm(ctx, visual_frames)
+        ctx.logger.info(f"   ✅ Visual analysis complete")
+        ctx.logger.info(f"   📊 Subjects detected: {len(initial_analysis.get('subjects', []))}")
 
         # Step 3: RAG RETRIEVAL - Query ChromaDB for similar visual patterns
-        ctx.logger.info(f"🔎 RAG RETRIEVAL: Querying ChromaDB for similar visual patterns...")
-        rag_results = await query_visual_patterns(ctx, msg.visual_embedding, msg.chromadb_collection_id)
-        ctx.logger.info(f"✅ Found {len(rag_results)} similar visual cases")
-        
+        ctx.logger.info(f"🔎 STEP 3: RAG RETRIEVAL - Querying ChromaDB...")
+        rag_results = await query_visual_patterns(ctx, req.visual_embedding, req.chromadb_collection_id)
+        ctx.logger.info(f"   ✅ Found {len(rag_results)} similar visual cases")
+
         # Step 4: Detect representation metrics
-        ctx.logger.info(f"📊 Calculating diversity metrics...")
+        ctx.logger.info(f"📊 STEP 4: Calculating diversity metrics...")
         diversity_metrics = await detect_representation_metrics(ctx, initial_analysis)
-        
+        ctx.logger.info(f"   ✅ Diversity metrics calculated")
+
         # Step 5: Analyze composition and power dynamics
-        ctx.logger.info(f"🎭 Analyzing composition and spatial dynamics...")
+        ctx.logger.info(f"🎭 STEP 5: Analyzing composition and spatial dynamics...")
         composition_analysis = await analyze_composition(ctx, initial_analysis)
-        
+        ctx.logger.info(f"   ✅ Composition analysis complete")
+
         # Step 6: Classify visual biases
-        ctx.logger.info(f"🏷️ Classifying visual bias types...")
+        ctx.logger.info(f"🏷️ STEP 6: Classifying visual bias types...")
         bias_detections = await classify_visual_biases(
-            ctx, 
-            initial_analysis, 
+            ctx,
+            initial_analysis,
             diversity_metrics,
             composition_analysis,
             rag_results
         )
-        
+        ctx.logger.info(f"   ✅ Classified {len(bias_detections)} visual bias types")
+
         # Step 7: Calculate overall visual score
-        ctx.logger.info(f"📊 Calculating overall visual bias score...")
+        ctx.logger.info(f"📊 STEP 7: Calculating overall visual bias score...")
         visual_score = await calculate_visual_score(ctx, bias_detections, diversity_metrics)
-        
+        ctx.logger.info(f"   ✅ Visual score calculated: {visual_score:.2f}/10")
+
         # Step 8: Generate recommendations
-        ctx.logger.info(f"💡 Generating recommendations...")
+        ctx.logger.info(f"💡 STEP 8: Generating recommendations...")
         recommendations = await generate_visual_recommendations(ctx, bias_detections, diversity_metrics)
+        ctx.logger.info(f"   ✅ Generated {len(recommendations)} recommendations")
 
         # Step 9: Create report - convert bias detections to dicts
+        ctx.logger.info(f"📋 STEP 9: Creating visual bias report...")
         bias_instances_dicts = [
             {
                 "bias_type": bd.bias_type.value,
@@ -231,7 +263,7 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackag
 
         # Create visual bias report dict
         report_dict = {
-            "request_id": msg.request_id,
+            "request_id": req.request_id,
             "agent_name": "visual_bias_agent",
             "bias_detected": len(bias_detections) > 0,
             "bias_instances": bias_instances_dicts,
@@ -241,29 +273,53 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackag
             "rag_similar_cases": [ref["id"] for ref in rag_results],
             "timestamp": datetime.now(UTC).isoformat()
         }
+        ctx.logger.info(f"   ✅ Report created")
 
-        ctx.logger.info(f"✅ Analysis complete: Score={visual_score:.1f}, Biases detected={len(bias_detections)}")
+        ctx.logger.info(f"🎉 Analysis complete!")
+        ctx.logger.info(f"   📊 Overall Score: {visual_score:.1f}/10")
+        ctx.logger.info(f"   🚨 Bias detected: {len(bias_detections) > 0}")
+        ctx.logger.info(f"   📝 Issues found: {len(bias_detections)}")
+        ctx.logger.info(f"   💡 Recommendations: {len(recommendations)}")
 
-        # Step 10: Send to Scoring Agent
-        await send_to_scoring_agent(ctx, msg.request_id, report_dict)
+        # Step 10: Send results to Scoring Agent
+        ctx.logger.info(f"📤 STEP 10: Sending results to Scoring Agent...")
+        ctx.logger.info(f"   🎯 Scoring Agent Address: {SCORING_AGENT_ADDRESS}")
+        await send_to_scoring_agent(ctx, req.request_id, report_dict)
+        ctx.logger.info(f"   ✅ Results sent successfully!")
 
-        ctx.logger.info(f"✅ Visual analysis for {msg.request_id} completed successfully")
-        
-    except Exception as e:
-        ctx.logger.error(f"❌ Error analyzing visual content for {msg.request_id}: {e}")
-        # Send error report
-        error_report = VisualBiasReport(
-            request_id=msg.request_id,
-            agent="visual_bias_agent",
-            bias_detected=False,
-            bias_types=[],
-            diversity_metrics=DiversityMetrics(),
-            overall_visual_score=5.0,
-            recommendations=["Error occurred during visual analysis"],
-            rag_references=[],
-            confidence=0.0
+        # Return response to REST caller
+        response = BiasAnalysisComplete(
+            request_id=req.request_id,
+            sender_agent="visual_bias_agent",
+            report=report_dict
         )
-        await ctx.send(sender, error_report)
+        ctx.logger.info(f"✅ Returning response to REST caller")
+        ctx.logger.info(f"✅ Visual analysis for {req.request_id} completed successfully")
+        ctx.logger.info("=" * 80)
+        return response
+
+    except Exception as e:
+        ctx.logger.error("=" * 80)
+        ctx.logger.error(f"❌ ERROR IN VISUAL BIAS AGENT")
+        ctx.logger.error("=" * 80)
+        ctx.logger.error(f"   Request ID: {req.request_id}")
+        ctx.logger.error(f"   Error: {e}")
+        ctx.logger.error(f"   Type: {type(e).__name__}")
+        import traceback
+        ctx.logger.error(f"   Traceback:\n{traceback.format_exc()}")
+        ctx.logger.error("=" * 80)
+
+        # Return error response
+        return BiasAnalysisComplete(
+            request_id=req.request_id,
+            sender_agent="visual_bias_agent",
+            report={
+                "request_id": req.request_id,
+                "agent_name": "visual_bias_agent",
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
+        )
 
 
 async def extract_video_keyframes(ctx: Context, video_url: str) -> List[str]:
