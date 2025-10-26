@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 
 export default function CTASection() {
@@ -10,8 +10,39 @@ export default function CTASection() {
     { src: "/chroma.png", alt: "Chroma" },
   ]
 
-  // Duplicate logos array for seamless infinite scroll
-  const duplicatedLogos = [...logos, ...logos, ...logos, ...logos]
+  // Duplicate logos 2x for seamless infinite scroll
+  const duplicatedLogos = [...logos, ...logos]
+
+  // rAF-powered marquee for perfectly continuous scrolling without visible resets
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+
+    let raf = 0
+    let lastTimestamp = performance.now()
+    let offsetPx = 0
+
+    // Pixels per second; increase for faster scroll
+    const speedPxPerSec = 260
+
+    const step = (now: number) => {
+      const deltaSec = (now - lastTimestamp) / 1000
+      lastTimestamp = now
+
+      offsetPx += speedPxPerSec * deltaSec
+      const halfWidth = el.scrollWidth / 2 // because content is duplicated exactly twice
+      if (halfWidth > 0) {
+        if (offsetPx >= halfWidth) offsetPx -= halfWidth
+        el.style.transform = `translate3d(${-offsetPx}px, 0, 0)`
+      }
+
+      raf = requestAnimationFrame(step)
+    }
+
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   return (
     <div className="w-full relative overflow-hidden flex flex-col justify-center items-center gap-2">
@@ -58,21 +89,34 @@ export default function CTASection() {
 
           {/* Powered by logos - Infinite scroll */}
           <div className="w-full overflow-hidden py-6">
-            <div className="animate-scroll" style={{ display: 'flex', whiteSpace: 'nowrap' }}>
+            <div className="flex" ref={trackRef} style={{ willChange: 'transform' }}>
               {duplicatedLogos.map((logo, i) => (
                 <div
                   key={i}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 2rem', height: '5rem', width: '12rem', flexShrink: 0 }}
+                  className="inline-flex items-center justify-center flex-shrink-0"
+                  style={{ padding: '0 2rem', height: '5rem', width: '12rem' }}
                 >
-                  <Image
-                    src={logo.src}
-                    alt={logo.alt}
-                    width={150}
-                    height={80}
-                    className="object-contain"
-                    style={{ maxHeight: '4rem' }}
-                    priority
-                  />
+                  {logo.src.includes('?') ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={150}
+                      height={80}
+                      className="object-contain"
+                      style={{ maxHeight: '4rem' }}
+                      loading="eager"
+                    />
+                  ) : (
+                    <Image
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={150}
+                      height={80}
+                      className="object-contain"
+                      style={{ maxHeight: '4rem' }}
+                      priority
+                    />
+                  )}
                 </div>
               ))}
             </div>
