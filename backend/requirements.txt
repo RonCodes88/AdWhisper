@@ -8,7 +8,8 @@ uagents==0.22.10
 uagents-adapter==0.4.0
 
 # Vector Database
-chromadb==0.5.23
+chromadb
+protobuf>=4.21.6,<6.0.0
 
 # Embeddings & ML Models
 sentence-transformers==3.3.1
@@ -24,6 +25,10 @@ opencv-python==4.10.0.84
 # Numerical & Data Processing
 numpy==2.2.0
 pandas==2.2.3
+
+# YouTube Processing
+youtube-transcript-api
+pytube
 
 # Utilities
 python-dotenv==1.0.1

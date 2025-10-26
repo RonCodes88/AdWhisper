@@ -103,16 +103,12 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="w-full min-h-screen relative bg-background flex flex-col justify-start items-center pt-20">
-      <div className="w-full max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 font-serif">
-            Upload Your Ad Content
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Upload your ad scripts, images, or videos for bias analysis
-          </p>
-        </div>
+    <div className="w-full min-h-screen relative bg-background overflow-x-hidden flex flex-col justify-start items-center">
+      <div className="relative flex flex-col justify-start items-center w-full">
+        <div className="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col justify-start items-start min-h-screen">
+          {/* Border lines matching landing page */}
+          <div className="h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0 w-px"></div>
+          <div className="h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0 w-px"></div>
 
         {/* Error Message */}
         {error && (

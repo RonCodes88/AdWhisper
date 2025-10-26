@@ -106,6 +106,7 @@ async def root():
     }
 
 
+
 @app.get("/health")
 async def health():
     """Health check endpoint"""

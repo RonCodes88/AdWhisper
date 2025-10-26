@@ -162,10 +162,9 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🧹 Cleaning up resources...")
 
 
-@ingestion_protocol.on_message(model=AdContentRequest, replies=IngestionAcknowledgement)
-async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
+async def process_ad_content(ctx: Context, msg: AdContentRequest) -> IngestionAcknowledgement:
     """
-    Handle incoming ad content, generate embeddings, and route to analysis agents.
+    Shared processing logic for ad content (used by both protocol and REST)
     """
     try:
         ctx.logger.info(f"📨 Received ad content request: {msg.request_id}")
@@ -173,7 +172,6 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
         
         # Store request in context storage
         ctx.storage.set(msg.request_id, {
-            "sender": sender,
             "content_type": msg.content_type.value,
             "received_at": datetime.now(UTC).isoformat()
         })
@@ -181,69 +179,138 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
         # Step 1: Preprocess content
         ctx.logger.info(f"🔄 Preprocessing content for request {msg.request_id}...")
         preprocessed_data = await preprocess_content(ctx, msg)
-        
+
         # Step 2: Generate embeddings
         ctx.logger.info(f"🧠 Generating embeddings for request {msg.request_id}...")
         text_embedding = None
         visual_embedding = None
-        
-        if msg.text_content:
-            text_embedding = await generate_text_embedding(ctx, msg.text_content)
+
+        # Use preprocessed text (which may include YouTube transcript)
+        if preprocessed_data.get("text"):
+            text_embedding = await generate_text_embedding(ctx, preprocessed_data["text"])
             ctx.logger.info(f"✅ Text embedding generated (dim: {len(text_embedding) if text_embedding else 0})")
-        
-        if msg.image_url or msg.video_url:
-            visual_embedding = await generate_visual_embedding(ctx, msg.image_url or msg.video_url)
+
+        # Use preprocessed image URL (which may include YouTube thumbnail)
+        if preprocessed_data.get("image_url"):
+            visual_embedding = await generate_visual_embedding(ctx, preprocessed_data["image_url"])
             ctx.logger.info(f"✅ Visual embedding generated (dim: {len(visual_embedding) if visual_embedding else 0})")
         
         # Step 3: Store in ChromaDB
         ctx.logger.info(f"💾 Storing embeddings in ChromaDB...")
-        collection_id = await store_in_chromadb(ctx, msg.request_id, text_embedding, visual_embedding, msg.metadata)
+        collection_id = await store_in_chromadb(
+            ctx,
+            msg.request_id,
+            text_embedding,
+            visual_embedding,
+            preprocessed_data.get("metadata")
+        )
         ctx.logger.info(f"✅ Stored in ChromaDB collection: {collection_id}")
-        
+
         # Step 4: Create embedding package
         embedding_package = EmbeddingPackage(
             request_id=msg.request_id,
+            text_content=preprocessed_data.get("text"),  # Include original text for analysis
             text_embedding=text_embedding,
             visual_embedding=visual_embedding,
             chromadb_collection_id=collection_id,
-            content_type=msg.content_type
+            content_type=msg.content_type,
+            metadata=preprocessed_data.get("metadata")
         )
         
         # Step 5: Route to analysis agents
         ctx.logger.info(f"🔀 Routing content to analysis agents...")
         await route_to_analysis_agents(ctx, embedding_package, msg)
         
-        # Send acknowledgement back to sender
-        acknowledgement = IngestionAcknowledgement(
+        ctx.logger.info(f"✅ Request {msg.request_id} processed successfully")
+        
+        return IngestionAcknowledgement(
             request_id=msg.request_id,
             status="success",
             message=f"Content ingested and routed for analysis. Collection ID: {collection_id}"
         )
         
-        await ctx.send(sender, acknowledgement)
-        ctx.logger.info(f"✅ Request {msg.request_id} processed successfully")
-        
     except Exception as e:
         ctx.logger.error(f"❌ Error processing request {msg.request_id}: {e}")
-        error_ack = IngestionAcknowledgement(
+        return IngestionAcknowledgement(
             request_id=msg.request_id,
             status="error",
             message=f"Error during ingestion: {str(e)}"
         )
-        await ctx.send(sender, error_ack)
+
+
+@ingestion_protocol.on_message(model=AdContentRequest, replies=IngestionAcknowledgement)
+async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
+    """
+    Handle incoming ad content from other agents via protocol
+    """
+    acknowledgement = await process_ad_content(ctx, msg)
+    await ctx.send(sender, acknowledgement)
+
+
+@ingestion_agent.on_rest_post("/analyze", AdContentRequest, IngestionAcknowledgement)
+async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
+    """
+    REST endpoint for FastAPI to send content directly
+    Usage: POST http://localhost:8100/analyze
+    """
+    ctx.logger.info(f"🌐 REST request received: {req.request_id}")
+    return await process_ad_content(ctx, req)
 
 
 async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[str, Any]:
     """
     Preprocess and clean incoming content.
+    For YouTube videos, extract transcript and metadata.
     """
     preprocessed = {
         "text": content.text_content.strip() if content.text_content else None,
         "image_url": content.image_url,
         "video_url": content.video_url,
-        "metadata": content.metadata
+        "metadata": content.metadata or {}
     }
-    
+
+    # If it's a YouTube video, extract content
+    if content.video_url and ("youtube.com" in content.video_url or "youtu.be" in content.video_url):
+        ctx.logger.info(f"🎬 Detected YouTube URL, extracting content...")
+
+        try:
+            youtube_data = extract_youtube_content(content.video_url)
+
+            if youtube_data["success"]:
+                ctx.logger.info(f"✅ YouTube content extracted successfully")
+
+                # Use transcript as text content if available
+                if youtube_data["transcript"]["success"]:
+                    transcript_text = youtube_data["transcript"]["text"]
+                    preprocessed["text"] = transcript_text
+                    ctx.logger.info(f"   - Transcript: {len(transcript_text)} characters")
+                else:
+                    ctx.logger.warning(f"   - No transcript available: {youtube_data['transcript']['error']}")
+
+                # Use thumbnail as image
+                preprocessed["image_url"] = youtube_data["thumbnail_url"]
+                ctx.logger.info(f"   - Thumbnail URL: {youtube_data['thumbnail_url']}")
+
+                # Add YouTube metadata
+                preprocessed["metadata"]["youtube"] = {
+                    "video_id": youtube_data["video_id"],
+                    "title": youtube_data["metadata"].get("title"),
+                    "channel": youtube_data["metadata"].get("channel"),
+                    "duration": youtube_data["metadata"].get("duration"),
+                    "views": youtube_data["metadata"].get("views"),
+                    "has_transcript": youtube_data["transcript"]["success"],
+                    "transcript_language": youtube_data["transcript"].get("language"),
+                    "is_auto_generated": youtube_data["transcript"].get("is_generated")
+                }
+
+            else:
+                ctx.logger.error(f"❌ Failed to extract YouTube content: {youtube_data['error']}")
+                preprocessed["metadata"]["youtube_error"] = youtube_data["error"]
+
+        except Exception as e:
+            ctx.logger.error(f"❌ Error processing YouTube video: {e}")
+            preprocessed["metadata"]["youtube_error"] = str(e)
+
     ctx.logger.info(f"✅ Content preprocessed for request {content.request_id}")
     return preprocessed
 
@@ -402,7 +469,7 @@ async def route_to_analysis_agents(
     Creates proper request messages for each agent.
     """
     routed_count = 0
-    
+
     # Route to Text Bias Agent if text content exists
     if original_content.text_content and TEXT_BIAS_AGENT_ADDRESS:
         try:
@@ -661,6 +728,10 @@ Capabilities:
   ✓ Generates embeddings (text + visual)
   ✓ Stores in ChromaDB for RAG retrieval
   ✓ Routes to specialized analysis agents
+
+Endpoints:
+  • Agent Protocol: http://localhost:8100/submit
+  • REST API: http://localhost:8100/analyze
 
 📍 Waiting for requests...
 🛑 Stop with Ctrl+C
