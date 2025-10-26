@@ -18,19 +18,17 @@ from enum import Enum
 import sys
 import os
 
-# Import embedding models
-from sentence_transformers import SentenceTransformer
-import torch
-from PIL import Image
-import requests
-from io import BytesIO
+# Note: Embedding models are now handled by individual agents
 
 # Import ChromaDB
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from chroma import ChromaDB
 
-# Import YouTube processor
-from youtube_processor import extract_youtube_content
+# Import Claude YouTube processor from utils directory
+utils_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'utils')
+if utils_path not in sys.path:
+    sys.path.insert(0, utils_path)  # Insert at beginning to prioritize utils version
+from claude_youtube_processor import get_claude_youtube_processor, extract_youtube_content_with_claude
 
 # Import shared models
 from agents.shared_models import (
@@ -41,6 +39,40 @@ from agents.shared_models import (
     BiasCategory
 )
 
+# Claude preprocessing models
+class ClaudePreprocessRequest(Model):
+    """Request for Claude to preprocess ad content"""
+    request_id: str
+    text_content: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    frames_count: Optional[int] = None
+    content_type: str
+    metadata: Optional[Dict[str, Any]] = None
+    timestamp: str = ""
+
+    def __init__(self, **data):
+        if 'timestamp' not in data or not data['timestamp']:
+            data['timestamp'] = datetime.now(UTC).isoformat()
+        super().__init__(**data)
+
+
+class ClaudePreprocessResponse(Model):
+    """Claude's response after preprocessing ad content"""
+    request_id: str
+    processed_text: Optional[str] = None
+    text_analysis: Optional[Dict[str, Any]] = None
+    visual_analysis: Optional[Dict[str, Any]] = None
+    preprocessing_notes: Optional[str] = None
+    confidence_score: float = 0.0
+    processing_time_ms: int = 0
+    timestamp: str = ""
+
+    def __init__(self, **data):
+        if 'timestamp' not in data or not data['timestamp']:
+            data['timestamp'] = datetime.now(UTC).isoformat()
+        super().__init__(**data)
+
 
 # Initialize Ingestion Agent
 ingestion_agent = Agent(
@@ -48,31 +80,18 @@ ingestion_agent = Agent(
     seed="ad_bias_ingestion_agent_unique_seed_2024",
     port=8100,
     endpoint=["http://localhost:8100/submit"],
-    mailbox=False  # Set to False for local REST API access (True for Agentverse)
+    mailbox=True  # Enable for Agentverse integration
 )
 
 # Protocol for ingestion
 ingestion_protocol = Protocol(name="ingestion_protocol", version="1.0")
 
+# Protocol for Claude preprocessing
+claude_preprocess_protocol = Protocol(name="claude_preprocess_protocol", version="1.0")
 
-# Initialize embedding models (lazy loading)
-_text_model = None
-_visual_model = None
+
+# ChromaDB instance (for agents to use)
 _chroma_db = None
-
-def get_text_model():
-    """Lazy load text embedding model"""
-    global _text_model
-    if _text_model is None:
-        _text_model = SentenceTransformer('all-MiniLM-L6-v2')  # 384-dim, fast and efficient
-    return _text_model
-
-def get_visual_model():
-    """Lazy load visual embedding model (CLIP)"""
-    global _visual_model
-    if _visual_model is None:
-        _visual_model = SentenceTransformer('clip-ViT-B-32')  # 512-dim CLIP model
-    return _visual_model
 
 def get_chroma_db():
     """Get ChromaDB instance"""
@@ -86,14 +105,37 @@ def get_chroma_db():
 TEXT_BIAS_AGENT_ADDRESS = "agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv"
 VISUAL_BIAS_AGENT_ADDRESS = "agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933"
 
+# ASI:ONE LLM agent addresses for Claude preprocessing
+CLAUDE_AGENT = 'agent1qvk7q2av3e2y5gf5s90nfzkc8a48q3wdqeevwrtgqfdl0k78rspd6f2l4dx'
+
+# Environment variables for ASI:ONE integration
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY")
+
 
 @ingestion_agent.on_event("startup")
 async def startup(ctx: Context):
     ctx.logger.info(f"🚀 Ingestion Agent started successfully!")
     ctx.logger.info(f"📍 Agent address: {ingestion_agent.address}")
-    ctx.logger.info(f"🔧 Role: Data Reception, Preprocessing, and Embedding Generation")
+    ctx.logger.info(f"🔧 Role: Content Extraction, Claude Preprocessing, and Agent Routing")
     ctx.logger.info(f"🌐 Endpoint: http://localhost:8100/submit")
-    ctx.logger.info(f"⚡ Ready to receive ad content for bias analysis")
+    
+    # Check API keys
+    if ANTHROPIC_API_KEY:
+        ctx.logger.info(f"✅ ANTHROPIC_API_KEY: Configured")
+    else:
+        ctx.logger.error(f"❌ ANTHROPIC_API_KEY: Not set - Claude preprocessing will fail")
+    
+    if AGENTVERSE_API_KEY:
+        ctx.logger.info(f"✅ AGENTVERSE_API_KEY: Configured")
+    else:
+        ctx.logger.error(f"❌ AGENTVERSE_API_KEY: Not set - Agent communication will fail")
+    
+    ctx.logger.info(f"🧠 Claude Integration: {CLAUDE_AGENT}")
+    ctx.logger.info(f"📤 Text Agent: {TEXT_BIAS_AGENT_ADDRESS}")
+    ctx.logger.info(f"👁️ Visual Agent: {VISUAL_BIAS_AGENT_ADDRESS}")
+    ctx.logger.info(f"✅ Claude YouTube Processor: Ready for intelligent video processing")
+    ctx.logger.info(f"⚡ Ready to extract content and route to bias analysis agents")
 
 
 @ingestion_agent.on_event("shutdown")
@@ -105,6 +147,7 @@ async def shutdown(ctx: Context):
 async def process_ad_content(ctx: Context, msg: AdContentRequest) -> IngestionAcknowledgement:
     """
     Shared processing logic for ad content (used by both protocol and REST)
+    Following the correct architecture: Extract → Claude Preprocess → Route to Agents
     """
     try:
         ctx.logger.info(f"📨 Received ad content request: {msg.request_id}")
@@ -116,48 +159,35 @@ async def process_ad_content(ctx: Context, msg: AdContentRequest) -> IngestionAc
             "received_at": datetime.now(UTC).isoformat()
         })
         
-        # Step 1: Preprocess content
-        ctx.logger.info(f"🔄 Preprocessing content for request {msg.request_id}...")
-        preprocessed_data = await preprocess_content(ctx, msg)
-
-        # Step 2: Generate embeddings
-        ctx.logger.info(f"🧠 Generating embeddings for request {msg.request_id}...")
-        text_embedding = None
-        visual_embedding = None
-
-        # Use preprocessed text (which may include YouTube transcript)
-        if preprocessed_data.get("text"):
-            text_embedding = await generate_text_embedding(ctx, preprocessed_data["text"])
-            ctx.logger.info(f"✅ Text embedding generated (dim: {len(text_embedding) if text_embedding else 0})")
-
-        # Use preprocessed image URL (which may include YouTube thumbnail)
-        if preprocessed_data.get("image_url"):
-            visual_embedding = await generate_visual_embedding(ctx, preprocessed_data["image_url"])
-            ctx.logger.info(f"✅ Visual embedding generated (dim: {len(visual_embedding) if visual_embedding else 0})")
+        # Step 1: Extract content (YouTube transcript + frames)
+        ctx.logger.info(f"🔄 Extracting content for request {msg.request_id}...")
+        extracted_data = await extract_content(ctx, msg)
         
-        # Step 3: Store in ChromaDB
-        ctx.logger.info(f"💾 Storing embeddings in ChromaDB...")
-        collection_id = await store_in_chromadb(
-            ctx,
-            msg.request_id,
-            text_embedding,
-            visual_embedding,
-            preprocessed_data.get("metadata")
-        )
-        ctx.logger.info(f"✅ Stored in ChromaDB collection: {collection_id}")
-
-        # Step 4: Create embedding package
+        # Step 2: Claude Preprocessing (as per architecture diagram)
+        ctx.logger.info(f"🧠 Claude preprocessing for request {msg.request_id}...")
+        preprocessed_data = await claude_preprocess_content(ctx, extracted_data, msg.request_id)
+        
+        # Step 3: Create embedding package with raw content (no embeddings yet)
+        # Convert frames to base64 if they exist
+        frames_base64 = None
+        if "frames" in extracted_data and extracted_data["frames"]:
+            ctx.logger.info(f"🖼️  Converting {len(extracted_data['frames'])} Claude-selected frames to base64...")
+            claude_processor = get_claude_youtube_processor()
+            frames_base64 = claude_processor.frames_to_base64(extracted_data["frames"])
+            ctx.logger.info(f"✅ Claude-selected frames converted to base64")
+        
         embedding_package = EmbeddingPackage(
             request_id=msg.request_id,
-            text_content=preprocessed_data.get("text"),  # Include original text for analysis
-            text_embedding=text_embedding,
-            visual_embedding=visual_embedding,
-            chromadb_collection_id=collection_id,
+            text_content=preprocessed_data.get("text"),  # Claude-processed text
+            text_embedding=None,  # Let Text Bias Agent generate this
+            visual_embedding=None,  # Let Visual Bias Agent generate this
+            frames_base64=frames_base64,  # Raw video frames
+            chromadb_collection_id=None,  # Let agents handle ChromaDB storage
             content_type=msg.content_type,
             metadata=preprocessed_data.get("metadata")
         )
         
-        # Step 5: Route to analysis agents
+        # Step 4: Route to analysis agents (they'll handle embeddings + ChromaDB)
         ctx.logger.info(f"🔀 Routing content to analysis agents...")
         await route_to_analysis_agents(ctx, embedding_package, msg)
         
@@ -166,7 +196,7 @@ async def process_ad_content(ctx: Context, msg: AdContentRequest) -> IngestionAc
         return IngestionAcknowledgement(
             request_id=msg.request_id,
             status="success",
-            message=f"Content ingested and routed for analysis. Collection ID: {collection_id}"
+            message=f"Content extracted, preprocessed with Claude, and routed to analysis agents"
         )
         
     except Exception as e:
@@ -187,6 +217,16 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
     await ctx.send(sender, acknowledgement)
 
 
+@claude_preprocess_protocol.on_message(model=ClaudePreprocessResponse, replies=None)
+async def handle_claude_response(ctx: Context, sender: str, msg: ClaudePreprocessResponse):
+    """
+    Handle Claude preprocessing responses (if needed for async processing)
+    """
+    ctx.logger.info(f"📨 Received Claude preprocessing response for request {msg.request_id}")
+    ctx.logger.info(f"   - Confidence: {msg.confidence_score}")
+    ctx.logger.info(f"   - Processing time: {msg.processing_time_ms}ms")
+
+
 @ingestion_agent.on_rest_post("/analyze", AdContentRequest, IngestionAcknowledgement)
 async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
     """
@@ -195,6 +235,207 @@ async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> IngestionA
     """
     ctx.logger.info(f"🌐 REST request received: {req.request_id}")
     return await process_ad_content(ctx, req)
+
+
+def extract_youtube_content(youtube_url: str) -> Dict[str, Any]:
+    """
+    Extract transcript, frames, and metadata from YouTube video
+    
+    Returns:
+        Dict with:
+        - success: bool
+        - video_id: str
+        - transcript: dict with text and metadata
+        - frames: list of numpy arrays
+        - thumbnail_url: str
+        - metadata: dict with video info
+    """
+    try:
+        processor = get_youtube_processor()
+        result = processor.process_youtube_video(youtube_url)
+        
+        return {
+            "success": True,
+            "video_id": result["video_id"],
+            "transcript": {
+                "success": True,
+                "text": result["transcript"],
+                "language": "en",  # YouTube API provides this
+                "is_generated": False
+            },
+            "frames": result["frames"],
+            "num_frames": result["num_frames"],
+            "thumbnail_url": f"https://img.youtube.com/vi/{result['video_id']}/maxresdefault.jpg",
+            "metadata": result["metadata"]
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "transcript": {
+                "success": False,
+                "error": str(e)
+            }
+        }
+
+
+async def extract_content(ctx: Context, content: AdContentRequest) -> Dict[str, Any]:
+    """
+    Extract raw content from the request (YouTube transcript + frames).
+    This is the first step before Claude preprocessing.
+    """
+    extracted = {
+        "text": content.text_content.strip() if content.text_content else None,
+        "image_url": content.image_url,
+        "video_url": content.video_url,
+        "frames": [],
+        "metadata": content.metadata or {}
+    }
+
+    # If it's a YouTube video, extract content using Claude
+    if content.video_url and ("youtube.com" in content.video_url or "youtu.be" in content.video_url):
+        ctx.logger.info(f"🎬 Detected YouTube URL, extracting content with Claude...")
+
+        try:
+            youtube_data = extract_youtube_content_with_claude(content.video_url)
+
+            if youtube_data["success"]:
+                ctx.logger.info(f"✅ YouTube content extracted successfully with Claude")
+
+                # Store raw transcript
+                transcript_text = youtube_data.get("transcript", "")
+                if transcript_text:
+                    extracted["text"] = transcript_text
+                    ctx.logger.info(f"   ✅ TRANSCRIPT EXTRACTED:")
+                    ctx.logger.info(f"      Length: {len(transcript_text)} characters")
+                    ctx.logger.info(f"      Preview: {transcript_text[:200]}...")
+                    ctx.logger.info(f"   📄 FULL TRANSCRIPT:")
+                    ctx.logger.info(f"   {'-' * 40}")
+                    ctx.logger.info(f"   {transcript_text}")
+                    ctx.logger.info(f"   {'-' * 40}")
+                else:
+                    ctx.logger.warning(f"   - No transcript available")
+
+                # Store Claude-analyzed transcript
+                transcript_analysis = youtube_data.get("transcript_analysis", {})
+                if transcript_analysis and "error" not in transcript_analysis:
+                    extracted["metadata"]["claude_transcript_analysis"] = transcript_analysis
+                    ctx.logger.info(f"   🧠 CLAUDE TRANSCRIPT ANALYSIS:")
+                    ctx.logger.info(f"      Overall bias score: {transcript_analysis.get('overall_bias_score', 'N/A')}")
+                    ctx.logger.info(f"      Summary: {transcript_analysis.get('summary', 'N/A')[:100]}...")
+
+                # Store Claude-selected bias-relevant frames
+                extracted["frames"] = youtube_data.get("frames", [])
+                extracted["num_frames"] = youtube_data.get("num_frames", 0)
+                ctx.logger.info(f"   ✅ CLAUDE-SELECTED BIAS-RELEVANT FRAMES:")
+                ctx.logger.info(f"      Count: {youtube_data.get('num_frames', 0)} frames")
+                if youtube_data.get("frames"):
+                    ctx.logger.info(f"      Size: {youtube_data['frames'][0].shape if youtube_data['frames'] else 'N/A'}")
+                    ctx.logger.info(f"      Format: numpy arrays (BGR, ready for analysis)")
+                    ctx.logger.info(f"      Selection: Claude identified most bias-relevant frames")
+                
+                # Store thumbnail URL
+                video_id = youtube_data.get("video_id", "unknown")
+                thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+                extracted["image_url"] = thumbnail_url
+                ctx.logger.info(f"   - Thumbnail URL: {thumbnail_url}")
+
+                # Add YouTube metadata
+                metadata = youtube_data.get("metadata", {})
+                extracted["metadata"]["youtube"] = {
+                    "video_id": video_id,
+                    "title": metadata.get("title"),
+                    "author": metadata.get("author"),
+                    "duration": metadata.get("duration"),
+                    "views": metadata.get("views"),
+                    "description": metadata.get("description", ""),
+                    "has_transcript": bool(transcript_text),
+                    "num_frames": youtube_data.get("num_frames", 0),
+                    "claude_processed": True
+                }
+
+            else:
+                ctx.logger.error(f"❌ Failed to extract YouTube content with Claude: {youtube_data['error']}")
+                extracted["metadata"]["youtube_error"] = youtube_data["error"]
+
+        except Exception as e:
+            ctx.logger.error(f"❌ Error processing YouTube video with Claude: {e}")
+            extracted["metadata"]["youtube_error"] = str(e)
+
+    ctx.logger.info(f"✅ Content extracted for request {content.request_id}")
+    return extracted
+
+
+async def claude_preprocess_content(ctx: Context, extracted_data: Dict[str, Any], request_id: str) -> Dict[str, Any]:
+    """
+    Use Claude to preprocess the extracted content (as per architecture diagram).
+    This is where Claude analyzes and prepares the content for the bias agents.
+    Throws errors if Claude preprocessing fails - no fallback mode.
+    """
+    ctx.logger.info(f"🧠 Claude preprocessing content for request {request_id}...")
+    
+    # Check if API keys are configured
+    if not ANTHROPIC_API_KEY:
+        raise Exception("ANTHROPIC_API_KEY not configured. Claude preprocessing requires Anthropic API key.")
+    
+    if not AGENTVERSE_API_KEY:
+        raise Exception("AGENTVERSE_API_KEY not configured. Agent communication requires Agentverse API key.")
+    
+    # Prepare Claude request
+    claude_request = ClaudePreprocessRequest(
+        request_id=request_id,
+        text_content=extracted_data.get("text"),
+        image_url=extracted_data.get("image_url"),
+        video_url=extracted_data.get("video_url"),
+        frames_count=len(extracted_data.get("frames", [])),
+        content_type="youtube_video" if extracted_data.get("video_url") else "text",
+        metadata=extracted_data.get("metadata", {})
+    )
+    
+    ctx.logger.info(f"📤 Sending content to Claude for preprocessing...")
+    ctx.logger.info(f"   - Text length: {len(extracted_data.get('text', ''))} chars")
+    ctx.logger.info(f"   - Frames count: {len(extracted_data.get('frames', []))}")
+    ctx.logger.info(f"   - Image URL: {extracted_data.get('image_url', 'None')}")
+    
+    # Send to Claude agent and wait for response
+    claude_response = await ctx.send_and_wait(
+        CLAUDE_AGENT, 
+        claude_request, 
+        timeout=30.0, 
+        response_type=ClaudePreprocessResponse
+    )
+    
+    if not claude_response:
+        raise Exception(f"Claude preprocessing timed out after 30 seconds for request {request_id}")
+    
+    ctx.logger.info(f"✅ Claude preprocessing completed successfully")
+    ctx.logger.info(f"   - Confidence score: {claude_response.confidence_score}")
+    ctx.logger.info(f"   - Processing time: {claude_response.processing_time_ms}ms")
+    
+    # Use Claude's processed content
+    preprocessed = {
+        "text": claude_response.processed_text or extracted_data.get("text"),
+        "image_url": extracted_data.get("image_url"),
+        "video_url": extracted_data.get("video_url"),
+        "frames": extracted_data.get("frames", []),
+        "metadata": extracted_data.get("metadata", {})
+    }
+    
+    # Add Claude preprocessing results to metadata
+    preprocessed["metadata"]["claude_preprocessing"] = {
+        "processed_at": claude_response.timestamp,
+        "confidence_score": claude_response.confidence_score,
+        "processing_time_ms": claude_response.processing_time_ms,
+        "text_analysis": claude_response.text_analysis,
+        "visual_analysis": claude_response.visual_analysis,
+        "preprocessing_notes": claude_response.preprocessing_notes,
+        "preprocessing_status": "completed_with_claude"
+    }
+    
+    return preprocessed
+
+
 
 
 async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[str, Any]:
@@ -223,11 +464,21 @@ async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[st
                 if youtube_data["transcript"]["success"]:
                     transcript_text = youtube_data["transcript"]["text"]
                     preprocessed["text"] = transcript_text
-                    ctx.logger.info(f"   - Transcript: {len(transcript_text)} characters")
+                    ctx.logger.info(f"   ✅ TRANSCRIPT EXTRACTED:")
+                    ctx.logger.info(f"      Length: {len(transcript_text)} characters")
+                    ctx.logger.info(f"      Preview: {transcript_text[:200]}...")
                 else:
                     ctx.logger.warning(f"   - No transcript available: {youtube_data['transcript']['error']}")
 
-                # Use thumbnail as image
+                # Store frames for visual analysis
+                preprocessed["frames"] = youtube_data["frames"]
+                preprocessed["num_frames"] = youtube_data["num_frames"]
+                ctx.logger.info(f"   ✅ FRAMES EXTRACTED:")
+                ctx.logger.info(f"      Count: {youtube_data['num_frames']} frames")
+                ctx.logger.info(f"      Size: {youtube_data['frames'][0].shape if youtube_data['frames'] else 'N/A'}")
+                ctx.logger.info(f"      Format: numpy arrays (BGR, ready for analysis)")
+                
+                # Use thumbnail as image URL
                 preprocessed["image_url"] = youtube_data["thumbnail_url"]
                 ctx.logger.info(f"   - Thumbnail URL: {youtube_data['thumbnail_url']}")
 
@@ -235,12 +486,14 @@ async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[st
                 preprocessed["metadata"]["youtube"] = {
                     "video_id": youtube_data["video_id"],
                     "title": youtube_data["metadata"].get("title"),
-                    "channel": youtube_data["metadata"].get("channel"),
+                    "author": youtube_data["metadata"].get("author"),
                     "duration": youtube_data["metadata"].get("duration"),
                     "views": youtube_data["metadata"].get("views"),
+                    "description": youtube_data["metadata"].get("description", ""),
                     "has_transcript": youtube_data["transcript"]["success"],
                     "transcript_language": youtube_data["transcript"].get("language"),
-                    "is_auto_generated": youtube_data["transcript"].get("is_generated")
+                    "is_auto_generated": youtube_data["transcript"].get("is_generated"),
+                    "num_frames": youtube_data["num_frames"]
                 }
 
             else:
@@ -255,155 +508,8 @@ async def preprocess_content(ctx: Context, content: AdContentRequest) -> Dict[st
     return preprocessed
 
 
-async def generate_text_embedding(ctx: Context, text: str) -> List[float]:
-    """
-    Generate text embeddings using sentence transformers.
-    
-    Uses 'all-MiniLM-L6-v2' model which produces 384-dimensional embeddings.
-    This model is fast, efficient, and great for semantic similarity.
-    """
-    ctx.logger.info(f"🧠 Generating text embedding (length: {len(text)} chars)")
-    
-    try:
-        # Load the model (cached after first load)
-        model = get_text_model()
-        
-        # Generate embedding
-        embedding = model.encode(text, convert_to_tensor=False)
-        
-        # Convert to list of floats
-        embedding_list = embedding.tolist()
-        
-        ctx.logger.info(f"✅ Generated text embedding: {len(embedding_list)}-dimensional vector")
-        return embedding_list
-        
-    except Exception as e:
-        ctx.logger.error(f"❌ Error generating text embedding: {e}")
-        # Fallback to zero vector
-        return [0.0] * 384
-
-
-async def generate_visual_embedding(ctx: Context, media_url: str) -> List[float]:
-    """
-    Generate visual embeddings using CLIP model.
-    
-    Uses 'clip-ViT-B-32' model which produces 512-dimensional embeddings.
-    This model understands both images and text in the same embedding space.
-    """
-    ctx.logger.info(f"🧠 Generating visual embedding for: {media_url}")
-    
-    try:
-        # Load the CLIP model (cached after first load)
-        model = get_visual_model()
-        
-        # Download and load the image
-        response = requests.get(media_url, timeout=10)
-        response.raise_for_status()
-        image = Image.open(BytesIO(response.content))
-        
-        # Convert to RGB if needed
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-        
-        # Generate embedding
-        embedding = model.encode(image, convert_to_tensor=False)
-        
-        # Convert to list of floats
-        embedding_list = embedding.tolist()
-        
-        ctx.logger.info(f"✅ Generated visual embedding: {len(embedding_list)}-dimensional vector")
-        return embedding_list
-        
-    except Exception as e:
-        ctx.logger.error(f"❌ Error generating visual embedding: {e}")
-        # Fallback to zero vector
-        return [0.0] * 512
-
-
-async def store_in_chromadb(
-    ctx: Context,
-    request_id: str,
-    text_embedding: Optional[List[float]],
-    visual_embedding: Optional[List[float]],
-    metadata: Dict[str, Any]
-) -> str:
-    """
-    Store embeddings in ChromaDB for future RAG retrieval.
-
-    Stores text and visual embeddings in separate collections to handle
-    different embedding dimensions (384 for text, 512 for visual).
-    """
-    ctx.logger.info(f"💾 Storing embeddings in ChromaDB for request {request_id}")
-
-    try:
-        # Get ChromaDB instance
-        chroma_db = get_chroma_db()
-        
-        # Prepare metadata (ChromaDB only supports str, int, float, bool, None)
-        storage_metadata = {
-            "request_id": request_id,
-            "timestamp": datetime.now(UTC).isoformat(),
-            "has_text_embedding": text_embedding is not None,
-            "has_visual_embedding": visual_embedding is not None,
-        }
-
-        # Flatten custom metadata if provided (ChromaDB doesn't support nested dicts or None)
-        if metadata:
-            for key, value in metadata.items():
-                if isinstance(value, dict):
-                    # Flatten nested dicts with dot notation
-                    for nested_key, nested_value in value.items():
-                        flat_key = f"{key}.{nested_key}"
-                        # Only add if value is a supported type and NOT None
-                        if nested_value is not None and isinstance(nested_value, (str, int, float, bool)):
-                            storage_metadata[flat_key] = nested_value
-                elif value is not None and isinstance(value, (str, int, float, bool)):
-                    storage_metadata[key] = value
-                # Skip None values and unsupported types (lists, objects, etc.)
-
-        # Create document content
-        document_content = f"Ad content - Request ID: {request_id}"
-        if metadata and "description" in metadata:
-            document_content = metadata["description"]
-
-        # Store embeddings in separate collections based on type
-        stored_count = 0
-
-        # Store text embedding (384-dim)
-        if text_embedding is not None:
-            chroma_db.text_collection.add(
-                embeddings=[text_embedding],
-                documents=[document_content],
-                metadatas=[storage_metadata],
-                ids=[f"text_{request_id}"]
-            )
-            ctx.logger.info(f"   ✅ Text embedding stored (384-dim)")
-            stored_count += 1
-
-        # Store visual embedding (512-dim)
-        if visual_embedding is not None:
-            chroma_db.visual_collection.add(
-                embeddings=[visual_embedding],
-                documents=[document_content],
-                metadatas=[storage_metadata],
-                ids=[f"visual_{request_id}"]
-            )
-            ctx.logger.info(f"   ✅ Visual embedding stored (512-dim)")
-            stored_count += 1
-
-        if stored_count == 0:
-            ctx.logger.warning(f"⚠️ No embeddings to store for request {request_id}")
-            return f"no_embedding_{request_id}"
-
-        ctx.logger.info(f"✅ Stored {stored_count} embedding(s) in ChromaDB: {request_id}")
-        ctx.logger.info(f"   - Text embedding: {text_embedding is not None}")
-        ctx.logger.info(f"   - Visual embedding: {visual_embedding is not None}")
-
-        return request_id
-        
-    except Exception as e:
-        ctx.logger.error(f"❌ Error storing in ChromaDB: {e}")
-        raise
+# Note: Embedding generation and ChromaDB storage are now handled by individual agents
+# The Ingestion Agent only extracts content and routes it to specialized agents
 
 
 async def route_to_analysis_agents(
@@ -413,102 +519,84 @@ async def route_to_analysis_agents(
 ):
     """
     Route content to Text and Visual Bias agents for parallel analysis.
+    Each agent receives the raw content and handles their own embedding generation.
     """
     routed_count = 0
 
     # Route to Text Bias Agent if text content exists
     if embedding_package.text_content and TEXT_BIAS_AGENT_ADDRESS:
-        ctx.logger.info(f"📤 Routing to Text Bias Agent: {TEXT_BIAS_AGENT_ADDRESS}")
+        ctx.logger.info(f"📤 Routing TEXT content to Text Bias Agent: {TEXT_BIAS_AGENT_ADDRESS}")
+        ctx.logger.info(f"   - Text length: {len(embedding_package.text_content)} characters")
         await ctx.send(TEXT_BIAS_AGENT_ADDRESS, embedding_package)
         routed_count += 1
 
-    # Route to Visual Bias Agent if visual content exists
-    if embedding_package.visual_embedding and VISUAL_BIAS_AGENT_ADDRESS:
-        ctx.logger.info(f"📤 Routing to Visual Bias Agent: {VISUAL_BIAS_AGENT_ADDRESS}")
+    # Route to Visual Bias Agent if visual content exists (frames or image)
+    has_visual_content = (embedding_package.frames_base64 and len(embedding_package.frames_base64) > 0) or embedding_package.metadata.get("image_url")
+    if has_visual_content and VISUAL_BIAS_AGENT_ADDRESS:
+        ctx.logger.info(f"📤 Routing VISUAL content to Visual Bias Agent: {VISUAL_BIAS_AGENT_ADDRESS}")
+        if embedding_package.frames_base64:
+            ctx.logger.info(f"   - Frames count: {len(embedding_package.frames_base64)}")
+        if embedding_package.metadata.get("image_url"):
+            ctx.logger.info(f"   - Image URL: {embedding_package.metadata.get('image_url')}")
         await ctx.send(VISUAL_BIAS_AGENT_ADDRESS, embedding_package)
         routed_count += 1
 
     if routed_count == 0:
         ctx.logger.warning(f"⚠️ No analysis agents configured or no content to analyze.")
         ctx.logger.warning(f"   - Text content: {embedding_package.text_content is not None}")
-        ctx.logger.warning(f"   - Visual embedding: {embedding_package.visual_embedding is not None}")
+        ctx.logger.warning(f"   - Visual content (frames): {embedding_package.frames_base64 is not None and len(embedding_package.frames_base64 or []) > 0}")
+        ctx.logger.warning(f"   - Visual content (image): {embedding_package.metadata.get('image_url') is not None}")
         ctx.logger.warning(f"   - Text agent address: {TEXT_BIAS_AGENT_ADDRESS}")
         ctx.logger.warning(f"   - Visual agent address: {VISUAL_BIAS_AGENT_ADDRESS}")
     else:
         ctx.logger.info(f"✅ Content routed to {routed_count} analysis agent(s)")
 
 
-# REST endpoint for FastAPI to submit content
-# NOTE: /submit is reserved by uAgents, so we use /ingest instead
-@ingestion_agent.on_rest_post("/ingest", AdContentRequest, IngestionAcknowledgement)
-async def rest_submit_content(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
+# Flexible REST endpoint for FastAPI (handles string content_type)
+class FlexibleAdContentRequest(Model):
+    """Flexible request model that accepts string content_type"""
+    request_id: str
+    content_type: str  # Accept string instead of enum
+    text_content: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    timestamp: str = ""
+
+    def __init__(self, **data):
+        if 'timestamp' not in data or not data['timestamp']:
+            data['timestamp'] = datetime.now(UTC).isoformat()
+        super().__init__(**data)
+
+
+@ingestion_agent.on_rest_post("/submit", FlexibleAdContentRequest, IngestionAcknowledgement)
+async def rest_submit_content(ctx: Context, req: FlexibleAdContentRequest) -> IngestionAcknowledgement:
     """
     REST endpoint for receiving ad content from FastAPI backend.
     This allows FastAPI to submit content via HTTP POST.
-    Usage: POST http://localhost:8100/ingest
+    Uses the same flow as the protocol handler: Extract → Claude Preprocess → Route to Agents
     """
     ctx.logger.info(f"📨 REST API: Received content request: {req.request_id}")
+    ctx.logger.info(f"   - Content type: {req.content_type}")
+    ctx.logger.info(f"   - Video URL: {req.video_url}")
+    ctx.logger.info(f"   - Text content: {req.text_content is not None}")
 
     try:
-        # Process the content (same as message handler)
-        # Store request in context storage
-        ctx.storage.set(req.request_id, {
-            "content_type": req.content_type.value,
-            "received_at": datetime.now(UTC).isoformat(),
-            "source": "rest_api"
-        })
-
-        # Step 1: Preprocess content
-        ctx.logger.info(f"🔄 Preprocessing content for request {req.request_id}...")
-        preprocessed_data = await preprocess_content(ctx, req)
-
-        # Step 2: Generate embeddings
-        ctx.logger.info(f"🧠 Generating embeddings for request {req.request_id}...")
-        text_embedding = None
-        visual_embedding = None
-
-        # Use preprocessed text (which may include YouTube transcript)
-        if preprocessed_data.get("text"):
-            text_embedding = await generate_text_embedding(ctx, preprocessed_data["text"])
-            ctx.logger.info(f"✅ Text embedding generated (dim: {len(text_embedding) if text_embedding else 0})")
-
-        # Use preprocessed image URL (which may include YouTube thumbnail)
-        if preprocessed_data.get("image_url"):
-            visual_embedding = await generate_visual_embedding(ctx, preprocessed_data["image_url"])
-            ctx.logger.info(f"✅ Visual embedding generated (dim: {len(visual_embedding) if visual_embedding else 0})")
-
-        # Step 3: Store in ChromaDB
-        ctx.logger.info(f"💾 Storing embeddings in ChromaDB...")
-        collection_id = await store_in_chromadb(
-            ctx,
-            req.request_id,
-            text_embedding,
-            visual_embedding,
-            preprocessed_data.get("metadata")
-        )
-        ctx.logger.info(f"✅ Stored in ChromaDB collection: {collection_id}")
-
-        # Step 4: Create embedding package
-        embedding_package = EmbeddingPackage(
+        # Convert flexible request to proper AdContentRequest
+        content_type_enum = ContentType(req.content_type) if req.content_type in [e.value for e in ContentType] else ContentType.VIDEO
+        
+        proper_request = AdContentRequest(
             request_id=req.request_id,
-            text_content=preprocessed_data.get("text"),
-            text_embedding=text_embedding,
-            visual_embedding=visual_embedding,
-            chromadb_collection_id=collection_id,
-            content_type=req.content_type,
-            metadata=preprocessed_data.get("metadata")
+            content_type=content_type_enum,
+            text_content=req.text_content,
+            image_url=req.image_url,
+            video_url=req.video_url,
+            metadata=req.metadata,
+            timestamp=req.timestamp
         )
-
-        # Step 5: Route to analysis agents
-        ctx.logger.info(f"🔀 Routing content to analysis agents...")
-        await route_to_analysis_agents(ctx, embedding_package, req)
-
-        # Return acknowledgement
-        return IngestionAcknowledgement(
-            request_id=req.request_id,
-            status="success",
-            message=f"Content ingested and routed for analysis. Collection ID: {collection_id}"
-        )
+        
+        # Use the same processing logic as the protocol handler
+        return await process_ad_content(ctx, proper_request)
 
     except Exception as e:
         ctx.logger.error(f"❌ Error processing REST request {req.request_id}: {e}")
@@ -519,8 +607,9 @@ async def rest_submit_content(ctx: Context, req: AdContentRequest) -> IngestionA
         )
 
 
-# Include protocol
+# Include protocols
 ingestion_agent.include(ingestion_protocol, publish_manifest=True)
+ingestion_agent.include(claude_preprocess_protocol, publish_manifest=True)
 
 
 if __name__ == "__main__":
@@ -529,19 +618,26 @@ if __name__ == "__main__":
 ║          🚀 INGESTION AGENT - Ad Bias Detection              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Role: Data Reception, Preprocessing, and Embedding Generation
+Role: Content Extraction, Claude Preprocessing, and Agent Routing
+
+Architecture Flow:
+  1. Extract YouTube content (transcript + frames)
+  2. Claude preprocessing and analysis
+  3. Route raw content to specialized agents
+  4. Agents handle their own embeddings + ChromaDB
 
 Capabilities:
-  ✓ Receives ad content (text, images, videos)
-  ✓ Generates embeddings (text + visual)
-  ✓ Stores in ChromaDB for RAG retrieval
-  ✓ Routes to specialized analysis agents
+  ✓ Extracts YouTube transcripts and video frames
+  ✓ Claude-powered content preprocessing
+  ✓ Routes text content to Text Bias Agent
+  ✓ Routes visual content to Visual Bias Agent
+  ✓ 1-minute video duration limit enforcement
 
 Endpoints:
   • Agent Protocol: http://localhost:8100/submit
-  • REST API: http://localhost:8100/analyze
+  • REST API: http://localhost:8100/submit
 
-📍 Waiting for requests...
+📍 Waiting for YouTube URLs...
 🛑 Stop with Ctrl+C
     """)
     ingestion_agent.run()
