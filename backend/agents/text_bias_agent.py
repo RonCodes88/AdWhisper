@@ -65,7 +65,10 @@ text_bias_agent = Agent(
 text_bias_protocol = Protocol(name="text_bias_protocol", version="1.0")
 
 # Scoring Agent address (to send results to)
-SCORING_AGENT_ADDRESS = "agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8"
+SCORING_AGENT_ADDRESS = None  # Will be set when needed
+
+# Module-level in-memory storage for text bias reports
+TEXT_REPORTS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 @text_bias_agent.on_event("startup")
@@ -206,16 +209,12 @@ async def handle_text_analysis_rest(ctx: Context, req: EmbeddingPackage) -> Bias
         ctx.logger.info(f"   📝 Issues found: {len(bias_instances)}")
         ctx.logger.info(f"   💡 Recommendations: {len(recommendations)}")
 
-        # Step 6: Store report for Scoring Agent to retrieve via REST
-        ctx.logger.info(f"📤 STEP 6: Storing report for Scoring Agent retrieval...")
-        report_key = f"text_report_{req.request_id}"
-        ctx.storage.set(report_key, report.dict())
-        ctx.logger.info(f"   💾 Report stored with key: {report_key}")
-        ctx.logger.info(f"   🌐 Scoring Agent can retrieve via: GET /report/{req.request_id}")
-        
-        # Step 7: Trigger Scoring Agent via REST to aggregate reports
-        ctx.logger.info(f"📤 STEP 7: Triggering Scoring Agent via HTTP...")
-        await trigger_scoring_agent(ctx, req.request_id, req.chromadb_collection_id)
+        # Step 6: Store report in in-memory cache
+        ctx.logger.info(f"📤 STEP 6: Storing report in memory cache...")
+        TEXT_REPORTS_CACHE[req.request_id] = report.dict()
+        ctx.logger.info(f"   💾 Report stored in memory for request_id: {req.request_id}")
+        ctx.logger.info(f"   📦 Cache now contains {len(TEXT_REPORTS_CACHE)} report(s)")
+        ctx.logger.info(f"   ℹ️  NOTE: Ingestion Agent will handle triggering Scoring Agent with both reports")
 
         # Return response to REST caller
         response = BiasAnalysisComplete(

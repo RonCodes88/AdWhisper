@@ -1,0 +1,1498 @@
+{
+    "visual_report_b23626df-6395-4b41-97e1-4167f59f39cc": {
+        "request_id": "b23626df-6395-4b41-97e1-4167f59f39cc",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:22:09.297103+00:00"
+    },
+    "visual_report_278fb334-d8dc-433c-be5d-e45fb8577173": {
+        "request_id": "278fb334-d8dc-433c-be5d-e45fb8577173",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:24:28.815610+00:00"
+    },
+    "visual_report_f520b3d7-265c-4831-969e-64cdfef9660d": {
+        "request_id": "f520b3d7-265c-4831-969e-64cdfef9660d",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:30:34.314844+00:00"
+    },
+    "visual_report_bdcc8f01-318c-43e8-8a89-bfcf46c68e14": {
+        "request_id": "bdcc8f01-318c-43e8-8a89-bfcf46c68e14",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:32:47.153670+00:00"
+    },
+    "visual_report_5be53b7b-fd74-4f1a-aca5-eedf7d0299ba": {
+        "request_id": "5be53b7b-fd74-4f1a-aca5-eedf7d0299ba",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:36:44.497601+00:00"
+    },
+    "visual_report_5134c1aa-9c2f-498e-a6a5-f549463a82a3": {
+        "request_id": "5134c1aa-9c2f-498e-a6a5-f549463a82a3",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:38:35.023321+00:00"
+    },
+    "visual_report_c0f7051d-8d78-48ee-b26d-3879464ade34": {
+        "request_id": "c0f7051d-8d78-48ee-b26d-3879464ade34",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:55:15.808534+00:00"
+    },
+    "visual_report_0731fd14-1b7e-4b9a-8d76-aa0b8f722eab": {
+        "request_id": "0731fd14-1b7e-4b9a-8d76-aa0b8f722eab",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:56:06.672011+00:00"
+    },
+    "visual_report_ae1e1f55-55f4-4fc4-8307-c7d30f058ecb": {
+        "request_id": "ae1e1f55-55f4-4fc4-8307-c7d30f058ecb",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T11:59:52.570083+00:00"
+    },
+    "visual_report_68e76369-d5e2-4a93-9ec2-5e703679b862": {
+        "request_id": "68e76369-d5e2-4a93-9ec2-5e703679b862",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 5.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.5,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Error occurred during analysis"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:01:01.482272+00:00"
+    },
+    "visual_report_8a0c9ee0-947c-46c4-b593-f56081a36675": {
+        "request_id": "8a0c9ee0-947c-46c4-b593-f56081a36675",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:04:15.132541+00:00"
+    },
+    "visual_report_087c4bcf-3b4f-4c33-94eb-fdd713c20dcf": {
+        "request_id": "087c4bcf-3b4f-4c33-94eb-fdd713c20dcf",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:04:56.210966+00:00"
+    },
+    "visual_report_19bda898-9858-4a99-a2d6-057310069fd1": {
+        "request_id": "19bda898-9858-4a99-a2d6-057310069fd1",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:06:58.140602+00:00"
+    },
+    "visual_report_1b61c286-b5bd-4f2d-82e4-f902ccb5017c": {
+        "request_id": "1b61c286-b5bd-4f2d-82e4-f902ccb5017c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:08:32.969844+00:00"
+    },
+    "visual_report_71307e49-cdfe-45d6-9e04-10cba17df9d9": {
+        "request_id": "71307e49-cdfe-45d6-9e04-10cba17df9d9",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:10:06.996700+00:00"
+    },
+    "visual_report_90ad5e39-4727-4fb0-9c58-d54e6f9822c7": {
+        "request_id": "90ad5e39-4727-4fb0-9c58-d54e6f9822c7",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:11:46.565423+00:00"
+    },
+    "visual_report_3ddd0742-4434-422f-b00e-5f61c3d49c0c": {
+        "request_id": "3ddd0742-4434-422f-b00e-5f61c3d49c0c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:12:11.294966+00:00"
+    },
+    "visual_report_56bf751d-d630-4ad3-b870-aa33f058642c": {
+        "request_id": "56bf751d-d630-4ad3-b870-aa33f058642c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:12:33.616150+00:00"
+    },
+    "visual_report_b8553147-31eb-49bc-a037-19ca0419bd9e": {
+        "request_id": "b8553147-31eb-49bc-a037-19ca0419bd9e",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:13:20.008038+00:00"
+    },
+    "visual_report_c43e92aa-32d8-4fec-a4b5-3b5abe97a67d": {
+        "request_id": "c43e92aa-32d8-4fec-a4b5-3b5abe97a67d",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:15:47.788234+00:00"
+    },
+    "visual_report_65f7b98d-5527-4021-8b3c-c9ce208ac13c": {
+        "request_id": "65f7b98d-5527-4021-8b3c-c9ce208ac13c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:17:36.807868+00:00"
+    },
+    "visual_report_2da8edc9-d643-41db-b5ce-a189d4b3f7dd": {
+        "request_id": "2da8edc9-d643-41db-b5ce-a189d4b3f7dd",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:19:47.353577+00:00"
+    },
+    "visual_report_7445cc1d-5c0f-46dc-a39c-d4111e6576cd": {
+        "request_id": "7445cc1d-5c0f-46dc-a39c-d4111e6576cd",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:20:24.208344+00:00"
+    },
+    "visual_report_51cfa0de-fd9a-461c-abfe-07bbb3b58f15": {
+        "request_id": "51cfa0de-fd9a-461c-abfe-07bbb3b58f15",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:21:11.499824+00:00"
+    },
+    "visual_report_2781e236-b9f4-4138-93e7-80eaef569434": {
+        "request_id": "2781e236-b9f4-4138-93e7-80eaef569434",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:22:00.583825+00:00"
+    },
+    "visual_report_569615a4-517f-4e84-bd6d-e4e5e4b4a4f3": {
+        "request_id": "569615a4-517f-4e84-bd6d-e4e5e4b4a4f3",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:22:35.849053+00:00"
+    },
+    "visual_report_8fed59ca-3d95-4183-a975-77f6056f2d45": {
+        "request_id": "8fed59ca-3d95-4183-a975-77f6056f2d45",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:24:04.070904+00:00"
+    },
+    "visual_report_0980a613-744f-4a67-b516-40997b0b51ed": {
+        "request_id": "0980a613-744f-4a67-b516-40997b0b51ed",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:29:04.559159+00:00"
+    },
+    "visual_report_240421c3-bc5a-4d87-a8be-1cec231e0f10": {
+        "request_id": "240421c3-bc5a-4d87-a8be-1cec231e0f10",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:29:59.523137+00:00"
+    },
+    "visual_report_86f2a4da-d13e-4156-b42a-a9a85ff7e494": {
+        "request_id": "86f2a4da-d13e-4156-b42a-a9a85ff7e494",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:31:29.249732+00:00"
+    },
+    "visual_report_4d0f19e8-217e-4923-b6e3-d920b5d82b01": {
+        "request_id": "4d0f19e8-217e-4923-b6e3-d920b5d82b01",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:34:23.598533+00:00"
+    },
+    "visual_report_e702b800-34bc-4d51-968e-d9d5269125dc": {
+        "request_id": "e702b800-34bc-4d51-968e-d9d5269125dc",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:35:16.790201+00:00"
+    },
+    "visual_report_44e0ebdc-c6fb-45fa-8367-0df3b1a7875f": {
+        "request_id": "44e0ebdc-c6fb-45fa-8367-0df3b1a7875f",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:36:14.562767+00:00"
+    },
+    "visual_report_e3145182-1351-4ed3-85fd-887fd50584c5": {
+        "request_id": "e3145182-1351-4ed3-85fd-887fd50584c5",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.0,
+                "female": 1.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "children": 0.0,
+                "young_adult": 1.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:36:40.669134+00:00"
+    },
+    "visual_report_769ee892-d0c9-4665-9283-bfa2695a9dea": {
+        "request_id": "769ee892-d0c9-4665-9283-bfa2695a9dea",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:37:11.132483+00:00"
+    },
+    "visual_report_ff0fe35b-50b7-4e31-b4f9-b55ec12109f0": {
+        "request_id": "ff0fe35b-50b7-4e31-b4f9-b55ec12109f0",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:37:44.631242+00:00"
+    },
+    "visual_report_2526cbef-b00f-4513-b8a5-fdfb69ca5d72": {
+        "request_id": "2526cbef-b00f-4513-b8a5-fdfb69ca5d72",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:38:31.139652+00:00"
+    },
+    "visual_report_cda22de0-8353-44b6-9437-91df9cb0e56c": {
+        "request_id": "cda22de0-8353-44b6-9437-91df9cb0e56c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:40:07.093795+00:00"
+    },
+    "visual_report_95484b76-8ed7-46a3-9007-c2d0d986a0ae": {
+        "request_id": "95484b76-8ed7-46a3-9007-c2d0d986a0ae",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 9.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "female": 1.0,
+                "male": 0.0,
+                "non_binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 1.0,
+                "black": 0.0,
+                "asian": 0.0,
+                "hispanic": 0.0,
+                "middle_eastern": 0.0,
+                "mixed": 0.0,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 1.0,
+                "children": 0.0,
+                "middle_aged": 0.0,
+                "senior": 0.0,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.25,
+            "power_dynamics_score": 0.5
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:40:58.247162+00:00"
+    },
+    "visual_report_175bdc56-7965-41d0-9dc6-2e828cfc392c": {
+        "request_id": "175bdc56-7965-41d0-9dc6-2e828cfc392c",
+        "agent_name": "visual_bias_agent",
+        "bias_detected": false,
+        "bias_instances": [],
+        "overall_visual_score": 10.0,
+        "diversity_metrics": {
+            "gender_distribution": {
+                "male": 0.5,
+                "female": 0.5,
+                "non-binary": 0.0,
+                "unknown": 0.0
+            },
+            "apparent_ethnicity": {
+                "white": 0.8,
+                "black": 0.1,
+                "asian": 0.05,
+                "hispanic": 0.05,
+                "unknown": 0.0
+            },
+            "age_distribution": {
+                "young_adult": 0.4,
+                "middle_aged": 0.5,
+                "senior": 0.1,
+                "unknown": 0.0
+            },
+            "body_type_diversity": 0.0,
+            "power_dynamics_score": 0.3
+        },
+        "recommendations": [
+            "Content appears balanced"
+        ],
+        "claude_analysis": {},
+        "timestamp": "2025-10-26T12:41:25.126673+00:00"
+    }
+}

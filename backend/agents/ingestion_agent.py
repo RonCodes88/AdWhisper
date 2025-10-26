@@ -216,14 +216,26 @@ async def handle_ad_content(ctx: Context, sender: str, msg: AdContentRequest):
     await ctx.send(sender, acknowledgement)
 
 
-@ingestion_agent.on_rest_post("/analyze", AdContentRequest, IngestionAcknowledgement)
-async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
+@ingestion_agent.on_rest_post("/analyze", AdContentRequest, Dict[str, Any])
+async def handle_rest_analyze(ctx: Context, req: AdContentRequest) -> Dict[str, Any]:
     """
-    REST endpoint for FastAPI to send content directly
+    REST endpoint for FastAPI to send content directly.
+    Returns the final scored bias report directly.
     Usage: POST http://localhost:8100/analyze
     """
     ctx.logger.info(f"🌐 REST request received: {req.request_id}")
-    return await process_ad_content(ctx, req)
+    final_report = await process_ad_content(ctx, req)
+    
+    if final_report:
+        # Return the complete scored report
+        return final_report
+    else:
+        # Return error if scoring failed
+        return {
+            "request_id": req.request_id,
+            "status": "error",
+            "message": "Failed to generate final bias report"
+        }
 
 
 def extract_youtube_content(youtube_url: str) -> Dict[str, Any]:
@@ -488,7 +500,7 @@ async def route_to_analysis_agents(
 ):
     """
     Route content to Text and Visual Bias agents via REST endpoints.
-    Agents will process content and send results to Scoring Agent.
+    Wait for both responses, then pass them to Scoring Agent.
     """
     ctx.logger.info("=" * 80)
     ctx.logger.info("📨 ROUTING CONTENT TO ANALYSIS AGENTS (REST)")
@@ -503,8 +515,6 @@ async def route_to_analysis_agents(
     if embedding_package.frames_base64:
         ctx.logger.info(f"   🎬 Number of frames: {len(embedding_package.frames_base64)}")
 
-    routed_count = 0
-
     # Convert embedding_package to dict for JSON serialization
     ctx.logger.info(f"📦 Converting EmbeddingPackage to dict for JSON serialization...")
     package_dict = {
@@ -514,150 +524,176 @@ async def route_to_analysis_agents(
         "frames_base64": embedding_package.frames_base64,
         "visual_embedding": embedding_package.visual_embedding,
         "chromadb_collection_id": embedding_package.chromadb_collection_id,
-        "content_type": embedding_package.content_type.value if hasattr(embedding_package.content_type, 'value') else embedding_package.content_type,  # Convert enum to string
+        "content_type": embedding_package.content_type.value if hasattr(embedding_package.content_type, 'value') else embedding_package.content_type,
         "metadata": embedding_package.metadata,
         "timestamp": embedding_package.timestamp
     }
     ctx.logger.info(f"✅ Package dict created with keys: {list(package_dict.keys())}")
-    ctx.logger.info(f"   📝 content_type: {package_dict['content_type']}")
-    ctx.logger.info(f"   📝 request_id: {package_dict['request_id']}")
 
-    # Route to Text Bias Agent if text content exists
+    # Initialize variables to store reports
+    text_report = None
+    visual_report = None
+
+    # Prepare URLs
+    text_agent_url = "http://localhost:8101/analyze"
+    visual_agent_url = "http://localhost:8102/analyze"
+
+    # Flags to determine which calls to make
+    should_call_text = bool(embedding_package.text_content)
+    has_visual_content = (embedding_package.frames_base64 and len(embedding_package.frames_base64) > 0) or (embedding_package.metadata and embedding_package.metadata.get("image_url"))
+
     ctx.logger.info("")
-    ctx.logger.info("🔍🔍🔍 CHECKING TEXT CONTENT FOR ROUTING 🔍🔍🔍")
-    ctx.logger.info(f"   - Has text content: {embedding_package.text_content is not None}")
-    if embedding_package.text_content:
-        ctx.logger.info(f"   - Text length: {len(embedding_package.text_content)} characters")
+    ctx.logger.info("🔍🔍🔍 STEP 1+2: CALLING TEXT & VISUAL BIAS AGENTS (in parallel) 🔍🔍🔍")
 
-    if embedding_package.text_content:
-        text_agent_url = "http://localhost:8101/analyze"
+    async def call_text_agent(session: aiohttp.ClientSession):
+        nonlocal text_report
+        if not should_call_text:
+            ctx.logger.warning(f"⚠️ SKIPPING TEXT BIAS AGENT - No text content to send")
+            return
         ctx.logger.info("")
         ctx.logger.info("=" * 80)
         ctx.logger.info("📤 SENDING HTTP REQUEST TO TEXT BIAS AGENT")
         ctx.logger.info("=" * 80)
         ctx.logger.info(f"   🎯 Endpoint URL: {text_agent_url}")
-        ctx.logger.info(f"   📦 Payload keys: {list(package_dict.keys())}")
         ctx.logger.info(f"   📏 Text content length: {len(embedding_package.text_content)} characters")
-        ctx.logger.info(f"   📖 Text preview: {embedding_package.text_content[:100]}...")
         ctx.logger.info(f"   📝 Request ID: {embedding_package.request_id}")
-        ctx.logger.info(f"   ⏱️  Timeout: 60 seconds")
-
+        ctx.logger.info(f"   ⏱️  Timeout: 120 seconds")
         try:
-            ctx.logger.info(f"🔌 Opening aiohttp ClientSession...")
-            async with aiohttp.ClientSession() as session:
-                ctx.logger.info(f"✅ ClientSession opened")
-                ctx.logger.info(f"📡 Making POST request to {text_agent_url}...")
-
-                async with session.post(text_agent_url, json=package_dict, timeout=aiohttp.ClientTimeout(total=60)) as response:
-                    ctx.logger.info(f"📥 Received response from Text Bias Agent!")
-                    ctx.logger.info(f"   📊 Status code: {response.status}")
-                    ctx.logger.info(f"   📋 Headers: {dict(response.headers)}")
-
-                    if response.status == 200:
-                        routed_count += 1
-                        ctx.logger.info(f"✅ SUCCESS - Text Bias Agent responded with 200 OK")
-                        result = await response.json()
-                        ctx.logger.info(f"   📊 Response sender_agent: {result.get('sender_agent', 'unknown')}")
-                        ctx.logger.info(f"   📊 Response request_id: {result.get('request_id', 'unknown')}")
-                        ctx.logger.info(f"   📊 Full response keys: {list(result.keys())}")
+            ctx.logger.info(f"📡 Making POST request to {text_agent_url}...")
+            async with session.post(text_agent_url, json=package_dict, timeout=aiohttp.ClientTimeout(total=120)) as response:
+                ctx.logger.info(f"📥 Received response from Text Bias Agent!")
+                ctx.logger.info(f"   📊 Status code: {response.status}")
+                if response.status == 200:
+                    result = await response.json()
+                    candidate = result.get('report', {})
+                    # Require expected fields to consider it valid
+                    if isinstance(candidate, dict) and ("overall_text_score" in candidate or "bias_instances" in candidate):
+                        text_report = candidate
+                        ctx.logger.info(f"✅ SUCCESS - Text Bias Agent analysis complete")
+                        ctx.logger.info(f"   📊 Text Score: {text_report.get('overall_text_score', 'N/A')}")
+                        ctx.logger.info(f"   📋 Issues Found: {len(text_report.get('bias_instances', []))}")
                     else:
-                        ctx.logger.error(f"   ❌ Text Bias Agent returned non-200 status: {response.status}")
-                        error_text = await response.text()
-                        ctx.logger.error(f"   📄 Error response: {error_text}")
-        except aiohttp.ClientConnectorError as e:
-            ctx.logger.error(f"❌ CONNECTION ERROR - Cannot connect to Text Bias Agent at {text_agent_url}")
-            ctx.logger.error(f"   💡 Make sure Text Bias Agent is running on port 8101")
-            ctx.logger.error(f"   🔧 Error: {e}")
-        except asyncio.TimeoutError:
-            ctx.logger.error(f"❌ TIMEOUT - Text Bias Agent took longer than 60 seconds")
+                        ctx.logger.error(f"   ❌ Text report missing expected fields, will not trigger scoring from this report")
+                else:
+                    error_text = await response.text()
+                    ctx.logger.error(f"   ❌ Text Bias Agent returned status: {response.status}")
+                    ctx.logger.error(f"   📄 Error response: {error_text}")
         except Exception as e:
-            ctx.logger.error(f"❌ UNEXPECTED ERROR calling Text Bias Agent REST endpoint")
-            ctx.logger.error(f"   🔧 Error type: {type(e).__name__}")
-            ctx.logger.error(f"   📄 Error message: {e}")
+            ctx.logger.error(f"❌ ERROR calling Text Bias Agent: {e}")
             import traceback
-            ctx.logger.error(f"   📜 Full traceback:")
             ctx.logger.error(traceback.format_exc())
-    else:
-        ctx.logger.warning(f"⚠️ SKIPPING TEXT BIAS AGENT - No text content to send")
 
-    # Route to Visual Bias Agent if visual content exists (frames or image)
-    ctx.logger.info("")
-    ctx.logger.info("🔍🔍🔍 CHECKING VISUAL CONTENT FOR ROUTING 🔍🔍🔍")
-    has_visual_content = (embedding_package.frames_base64 and len(embedding_package.frames_base64) > 0) or (embedding_package.metadata and embedding_package.metadata.get("image_url"))
-    ctx.logger.info(f"   - Has frames: {embedding_package.frames_base64 is not None and len(embedding_package.frames_base64 or []) > 0}")
-    if embedding_package.frames_base64:
-        ctx.logger.info(f"   - Frames count: {len(embedding_package.frames_base64)}")
-    ctx.logger.info(f"   - Has image URL in metadata: {embedding_package.metadata.get('image_url') is not None if embedding_package.metadata else False}")
-    ctx.logger.info(f"   - Overall has_visual_content: {has_visual_content}")
-
-    if has_visual_content:
-        visual_agent_url = "http://localhost:8102/analyze"
+    async def call_visual_agent(session: aiohttp.ClientSession):
+        nonlocal visual_report
+        if not has_visual_content:
+            ctx.logger.warning(f"⚠️ SKIPPING VISUAL BIAS AGENT - No visual content to send")
+            return
         ctx.logger.info("")
         ctx.logger.info("=" * 80)
         ctx.logger.info("📤 SENDING HTTP REQUEST TO VISUAL BIAS AGENT")
         ctx.logger.info("=" * 80)
         ctx.logger.info(f"   🎯 Endpoint URL: {visual_agent_url}")
-        ctx.logger.info(f"   📦 Payload keys: {list(package_dict.keys())}")
-
         if embedding_package.frames_base64:
             ctx.logger.info(f"   🖼️  Frames count: {len(embedding_package.frames_base64)}")
-            ctx.logger.info(f"   📏 First frame size: {len(embedding_package.frames_base64[0]) if embedding_package.frames_base64 else 0} bytes")
-        if embedding_package.metadata and embedding_package.metadata.get("image_url"):
-            ctx.logger.info(f"   🔗 Image URL: {embedding_package.metadata.get('image_url')}")
         ctx.logger.info(f"   📝 Request ID: {embedding_package.request_id}")
-        ctx.logger.info(f"   ⏱️  Timeout: 60 seconds")
-
+        ctx.logger.info(f"   ⏱️  Timeout: 180 seconds")
         try:
-            ctx.logger.info(f"🔌 Opening aiohttp ClientSession...")
-            async with aiohttp.ClientSession() as session:
-                ctx.logger.info(f"✅ ClientSession opened")
-                ctx.logger.info(f"📡 Making POST request to {visual_agent_url}...")
-
-                async with session.post(visual_agent_url, json=package_dict, timeout=aiohttp.ClientTimeout(total=60)) as response:
-                    ctx.logger.info(f"📥 Received response from Visual Bias Agent!")
-                    ctx.logger.info(f"   📊 Status code: {response.status}")
-                    ctx.logger.info(f"   📋 Headers: {dict(response.headers)}")
-
-                    if response.status == 200:
-                        routed_count += 1
-                        ctx.logger.info(f"✅ SUCCESS - Visual Bias Agent responded with 200 OK")
-                        result = await response.json()
-                        ctx.logger.info(f"   📊 Response sender_agent: {result.get('sender_agent', 'unknown')}")
-                        ctx.logger.info(f"   📊 Response request_id: {result.get('request_id', 'unknown')}")
-                        ctx.logger.info(f"   📊 Full response keys: {list(result.keys())}")
+            ctx.logger.info(f"📡 Making POST request to {visual_agent_url}...")
+            async with session.post(visual_agent_url, json=package_dict, timeout=aiohttp.ClientTimeout(total=180)) as response:
+                ctx.logger.info(f"📥 Received response from Visual Bias Agent!")
+                ctx.logger.info(f"   📊 Status code: {response.status}")
+                if response.status == 200:
+                    result = await response.json()
+                    candidate = result.get('report', {})
+                    # Require expected fields to consider it valid
+                    if isinstance(candidate, dict) and ("overall_visual_score" in candidate or "bias_instances" in candidate):
+                        visual_report = candidate
+                        ctx.logger.info(f"✅ SUCCESS - Visual Bias Agent analysis complete")
+                        ctx.logger.info(f"   📊 Visual Score: {visual_report.get('overall_visual_score', 'N/A')}")
+                        ctx.logger.info(f"   📋 Issues Found: {len(visual_report.get('bias_instances', []))}")
                     else:
-                        ctx.logger.error(f"   ❌ Visual Bias Agent returned non-200 status: {response.status}")
-                        error_text = await response.text()
-                        ctx.logger.error(f"   📄 Error response: {error_text}")
-        except aiohttp.ClientConnectorError as e:
-            ctx.logger.error(f"❌ CONNECTION ERROR - Cannot connect to Visual Bias Agent at {visual_agent_url}")
-            ctx.logger.error(f"   💡 Make sure Visual Bias Agent is running on port 8102")
-            ctx.logger.error(f"   🔧 Error: {e}")
-        except asyncio.TimeoutError:
-            ctx.logger.error(f"❌ TIMEOUT - Visual Bias Agent took longer than 60 seconds")
+                        ctx.logger.error(f"   ❌ Visual report missing expected fields, will not trigger scoring from this report")
+                else:
+                    error_text = await response.text()
+                    ctx.logger.error(f"   ❌ Visual Bias Agent returned status: {response.status}")
+                    ctx.logger.error(f"   📄 Error response: {error_text}")
         except Exception as e:
-            ctx.logger.error(f"❌ UNEXPECTED ERROR calling Visual Bias Agent REST endpoint")
-            ctx.logger.error(f"   🔧 Error type: {type(e).__name__}")
-            ctx.logger.error(f"   📄 Error message: {e}")
+            ctx.logger.error(f"❌ ERROR calling Visual Bias Agent: {e}")
             import traceback
-            ctx.logger.error(f"   📜 Full traceback:")
+            ctx.logger.error(traceback.format_exc())
+
+    # Execute selected calls in parallel within a single session
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        if should_call_text:
+            tasks.append(call_text_agent(session))
+        if has_visual_content:
+            tasks.append(call_visual_agent(session))
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    # Step 3: Call Scoring Agent ONLY when BOTH reports are available
+    ctx.logger.info("")
+    ctx.logger.info("=" * 80)
+    ctx.logger.info("🔍🔍🔍 STEP 3: CHECKING IF BOTH REPORTS ARE READY 🔍🔍🔍")
+    ctx.logger.info("=" * 80)
+    ctx.logger.info(f"   📊 Text Report: {'✅ Available' if text_report else '❌ Missing'}")
+    ctx.logger.info(f"   📊 Visual Report: {'✅ Available' if visual_report else '❌ Missing'}")
+    
+    # Call scoring agent when at least one valid report is available
+    final_scored_report = None
+    if text_report or visual_report:
+        ctx.logger.info(f"✅ Reports available - proceeding to scoring...")
+        
+        scoring_agent_url = "http://localhost:8103/score"
+        ctx.logger.info(f"   🎯 Endpoint URL: {scoring_agent_url}")
+        ctx.logger.info(f"   📝 Request ID: {embedding_package.request_id}")
+        
+        try:
+            scoring_payload = {
+                "request_id": embedding_package.request_id,
+                "text_report": text_report if text_report else None,
+                "visual_report": visual_report if visual_report else None,
+                "chromadb_collection_id": embedding_package.chromadb_collection_id or embedding_package.request_id
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                ctx.logger.info(f"📡 Making POST request to {scoring_agent_url}...")
+                async with session.post(scoring_agent_url, json=scoring_payload, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                    ctx.logger.info(f"📥 Received response from Scoring Agent!")
+                    ctx.logger.info(f"   📊 Status code: {response.status}")
+                    
+                    if response.status == 200:
+                        final_scored_report = await response.json()
+                        ctx.logger.info(f"✅ SUCCESS - Final scoring complete!")
+                        ctx.logger.info(f"   📊 Final Score: {final_scored_report.get('overall_bias_score', 'N/A'):.1f}/10")
+                        ctx.logger.info(f"   🏷️  Bias Level: {final_scored_report.get('bias_level', 'N/A')}")
+                        ctx.logger.info(f"   📋 Total Issues: {final_scored_report.get('total_issues', 0)}")
+                    else:
+                        ctx.logger.error(f"   ❌ Scoring Agent returned status: {response.status}")
+                        error_text = await response.text()
+                        ctx.logger.error(f"   📄 Error response: {error_text[:200]}")
+        except Exception as e:
+            ctx.logger.error(f"❌ ERROR calling Scoring Agent: {e}")
+            import traceback
             ctx.logger.error(traceback.format_exc())
     else:
-        ctx.logger.warning(f"⚠️ SKIPPING VISUAL BIAS AGENT - No visual content to send")
+        ctx.logger.error(f"❌ No reports available to score")
+        ctx.logger.error(f"   Text Report: {'Present' if text_report else 'MISSING'}")
+        ctx.logger.error(f"   Visual Report: {'Present' if visual_report else 'MISSING'}")
+        ctx.logger.error(f"   ⚠️  Skipping Scoring Agent call")
 
     ctx.logger.info("")
     ctx.logger.info("=" * 80)
-    ctx.logger.info("📊 ROUTING SUMMARY")
+    ctx.logger.info("📊 ANALYSIS PIPELINE COMPLETE")
     ctx.logger.info("=" * 80)
-    if routed_count > 0:
-        ctx.logger.info(f"✅✅✅ Successfully routed content to {routed_count} analysis agent(s) via REST")
-        ctx.logger.info(f"   ℹ️  Text Bias Agent will trigger Scoring Agent after both analyses complete")
-    else:
-        ctx.logger.error(f"❌❌❌ ROUTING FAILED - No content was routed to any agents!")
-        ctx.logger.error(f"   - Text content available: {embedding_package.text_content is not None}")
-        ctx.logger.error(f"   - Visual content available: {has_visual_content}")
-        ctx.logger.error(f"   💡 Check that Text Bias Agent (port 8101) and Visual Bias Agent (port 8102) are running")
+    ctx.logger.info(f"   ✅ Text Analysis: {'Complete' if text_report else 'Skipped/Failed'}")
+    ctx.logger.info(f"   ✅ Visual Analysis: {'Complete' if visual_report else 'Skipped/Failed'}")
+    ctx.logger.info(f"   ✅ Final Scoring: {'Complete' if final_scored_report else 'Failed'}")
     ctx.logger.info("=" * 80)
+    
+    # RETURN the final scored report so main.py can pass it to frontend
+    return final_scored_report
 
 
 # Flexible REST endpoint for FastAPI (handles string content_type)
@@ -702,24 +738,22 @@ async def rest_submit_content(ctx: Context, req: FlexibleAdContentRequest) -> In
             timestamp=req.timestamp
         )
 
-        # Schedule async processing (don't await - process in background)
-        import asyncio
-        ctx.logger.info(f"🔄 Creating background task for request {req.request_id}...")
-        task = asyncio.create_task(process_ad_content(ctx, proper_request))
-        ctx.logger.info(f"✅ Background task created successfully: {task}")
-
-        # Return immediately
-        ctx.logger.info(f"✅ Request {req.request_id} accepted - processing in background")
-        ctx.logger.info(f"   ⚙️  Background task will:")
+        # Process the content and WAIT for completion (including scoring)
+        ctx.logger.info(f"🔄 Processing request {req.request_id}...")
+        ctx.logger.info(f"   ⚙️  This will:")
         ctx.logger.info(f"      1. Extract content from YouTube")
         ctx.logger.info(f"      2. Preprocess with Claude")
-        ctx.logger.info(f"      3. Route to Text/Visual Bias Agents via REST")
-        ctx.logger.info(f"   📊 Watch the logs above for progress...")
-        return IngestionAcknowledgement(
-            request_id=req.request_id,
-            status="accepted",
-            message="Request accepted and processing in background"
-        )
+        ctx.logger.info(f"      3. Analyze with Text/Visual Bias Agents")
+        ctx.logger.info(f"      4. Generate final score")
+        ctx.logger.info(f"   ⏳ Please wait - this may take 30-60 seconds...")
+        
+        # AWAIT the entire pipeline to complete
+        acknowledgement = await process_ad_content(ctx, proper_request)
+        
+        ctx.logger.info(f"✅ Request {req.request_id} fully processed!")
+        ctx.logger.info(f"   📊 Final report is now available at GET /report/{req.request_id}")
+        
+        return acknowledgement
 
     except Exception as e:
         ctx.logger.error(f"❌ Error accepting REST request {req.request_id}: {e}")

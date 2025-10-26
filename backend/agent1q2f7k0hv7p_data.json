@@ -1,0 +1,154 @@
+{
+    "text_report_b23626df-6395-4b41-97e1-4167f59f39cc": {
+        "request_id": "b23626df-6395-4b41-97e1-4167f59f39cc",
+        "agent_name": "text_bias_agent",
+        "bias_detected": true,
+        "bias_instances": [
+            {
+                "bias_type": "gender_bias",
+                "severity": "high",
+                "examples": [
+                    "\"they make your butt look amazing\"",
+                    "\"Sydney Sweeney Hazburg jeans\"",
+                    "\"You see what I did there, right?\""
+                ],
+                "context": "This advertisement uses sexual objectification and innuendo through multiple layers of wordplay. The phrase \"make your butt look amazing\" reduces the value proposition to a woman's body part and sexual appeal rather than product quality. The pairing of celebrity Sydney Sweeney's name with \"Hazburg jeans\" creates a double entendre—\"Hazburg\" phonetically resembles \"has burg\" or suggests \"has [body part],\" creating a sexual pun that associates the celebrity with her physical attributes. The meta-commentary (\"You see what I did there, right?\") acknowledges the wordplay while normalizing the objectification, making it seem clever rather than problematic. This strategy uses a female celebrity as a sexual prop to sell jeans.",
+                "confidence": 0.92,
+                "impact": "This language perpetuates the objectification of women by reducing them to body parts and sexual appeal. It teaches consumers (especially young audiences, given Sydney Sweeney's demographic) that women's value is tied to their physical appearance and sexual desirability, while using celebrity women as unwitting participants in their own sexualization for commercial gain."
+            },
+            {
+                "bias_type": "gender_bias",
+                "severity": "medium",
+                "examples": [
+                    "\"I'm not here to tell you to buy\"",
+                    "\"I definitely won't say\"",
+                    "\"this is not me telling you\""
+                ],
+                "context": "The repetitive disclaimers (\"I'm not here to tell you,\" \"I definitely won't say,\" \"this is not me telling you\") employ reverse psychology that could be read as dismissive or manipulative—a communication pattern sometimes associated with stereotypical male avoidance of direct engagement. While not explicitly gendered, the tone of deflection and the pairing with objectifying language about women's bodies creates a dynamic where the speaker distances themselves from accountability while still delivering the objectifying message.",
+                "confidence": 0.65,
+                "impact": "This rhetorical strategy normalizes indirect communication about women's bodies and can reinforce patterns where objectification is presented as casual or ironic rather than harmful."
+            }
+        ],
+        "overall_text_score": 7.97,
+        "recommendations": [
+            "Use gender-neutral language and avoid male-default terminology",
+            "Use gender-neutral language and avoid male-default terminology"
+        ],
+        "rag_similar_cases": [],
+        "timestamp": "2025-10-26T11:22:02.346386+00:00"
+    },
+    "text_report_278fb334-d8dc-433c-be5d-e45fb8577173": {
+        "request_id": "278fb334-d8dc-433c-be5d-e45fb8577173",
+        "agent_name": "text_bias_agent",
+        "bias_detected": true,
+        "bias_instances": [
+            {
+                "bias_type": "gender_bias",
+                "severity": "high",
+                "examples": [
+                    "\"they make your butt look amazing\"",
+                    "\"Sydney Sweeney Hazburg jeans\"",
+                    "\"You see what I did there, right?\""
+                ],
+                "context": "This advertisement uses sexual objectification and innuendo through multiple layers of wordplay. The phrase \"make your butt look amazing\" reduces the value proposition to a woman's body part and sexual appeal rather than product quality. The pairing of celebrity Sydney Sweeney's name with \"Hazburg jeans\" creates a double entendre—\"Hazburg\" phonetically resembles \"has burg\" or suggests \"has [body part],\" creating a sexual pun that associates the celebrity with her physical attributes. The meta-commentary (\"You see what I did there, right?\") acknowledges the wordplay while normalizing the objectification, making it seem clever rather than problematic. This strategy uses a female celebrity as a sexual prop to sell jeans.",
+                "confidence": 0.92,
+                "impact": "This language perpetuates the objectification of women by reducing them to body parts and sexual appeal. It teaches consumers (especially young audiences, given Sydney Sweeney's demographic) that women's value is tied to their physical appearance and sexual desirability, while using celebrity women as unwitting participants in their own sexualization for commercial gain."
+            },
+            {
+                "bias_type": "gender_bias",
+                "severity": "medium",
+                "examples": [
+                    "\"I'm not here to tell you to buy\"",
+                    "\"I definitely won't say\"",
+                    "\"this is not me telling you\""
+                ],
+                "context": "The repetitive disclaimers (\"I'm not here to tell you,\" \"I definitely won't say,\" \"this is not me telling you\") employ reverse psychology that could be read as dismissive or manipulative—a communication pattern sometimes associated with stereotypical male avoidance of direct engagement. While not explicitly gendered, the tone of deflection and the pairing with objectifying language about women's bodies creates a dynamic where the speaker distances themselves from accountability while still delivering the objectifying message.",
+                "confidence": 0.65,
+                "impact": "This rhetorical strategy normalizes indirect communication about women's bodies and can reinforce patterns where objectification is presented as casual or ironic rather than harmful."
+            }
+        ],
+        "overall_text_score": 7.97,
+        "recommendations": [
+            "Use gender-neutral language and avoid male-default terminology",
+            "Use gender-neutral language and avoid male-default terminology"
+        ],
+        "rag_similar_cases": [],
+        "timestamp": "2025-10-26T11:24:22.430397+00:00"
+    },
+    "text_report_f520b3d7-265c-4831-969e-64cdfef9660d": {
+        "request_id": "f520b3d7-265c-4831-969e-64cdfef9660d",
+        "agent_name": "text_bias_agent",
+        "bias_detected": true,
+        "bias_instances": [
+            {
+                "bias_type": "gender_bias",
+                "severity": "high",
+                "examples": [
+                    "\"they make your butt look amazing\"",
+                    "\"Sydney Sweeney Hazburg jeans\"",
+                    "\"You see what I did there, right?\""
+                ],
+                "context": "This advertisement uses sexual objectification and innuendo through multiple layers of wordplay. The phrase \"make your butt look amazing\" reduces the value proposition to a woman's body part and sexual appeal rather than product quality. The pairing of celebrity Sydney Sweeney's name with \"Hazburg jeans\" creates a double entendre—\"Hazburg\" phonetically resembles \"has burg\" or suggests \"has [body part],\" creating a sexual pun that associates the celebrity with her physical attributes. The meta-commentary (\"You see what I did there, right?\") acknowledges the wordplay while normalizing the objectification, making it seem clever rather than problematic. This strategy uses a female celebrity as a sexual prop to sell jeans.",
+                "confidence": 0.92,
+                "impact": "This language perpetuates the objectification of women by reducing them to body parts and sexual appeal. It teaches consumers (especially young audiences, given Sydney Sweeney's demographic) that women's value is tied to their physical appearance and sexual desirability, while using celebrity women as unwitting participants in their own sexualization for commercial gain."
+            },
+            {
+                "bias_type": "gender_bias",
+                "severity": "medium",
+                "examples": [
+                    "\"I'm not here to tell you to buy\"",
+                    "\"I definitely won't say\"",
+                    "\"this is not me telling you\""
+                ],
+                "context": "The repetitive disclaimers (\"I'm not here to tell you,\" \"I definitely won't say,\" \"this is not me telling you\") employ reverse psychology that could be read as dismissive or manipulative—a communication pattern sometimes associated with stereotypical male avoidance of direct engagement. While not explicitly gendered, the tone of deflection and the pairing with objectifying language about women's bodies creates a dynamic where the speaker distances themselves from accountability while still delivering the objectifying message.",
+                "confidence": 0.65,
+                "impact": "This rhetorical strategy normalizes indirect communication about women's bodies and can reinforce patterns where objectification is presented as casual or ironic rather than harmful."
+            }
+        ],
+        "overall_text_score": 7.97,
+        "recommendations": [
+            "Use gender-neutral language and avoid male-default terminology",
+            "Use gender-neutral language and avoid male-default terminology"
+        ],
+        "rag_similar_cases": [],
+        "timestamp": "2025-10-26T11:30:27.792667+00:00"
+    },
+    "text_report_bdcc8f01-318c-43e8-8a89-bfcf46c68e14": {
+        "request_id": "bdcc8f01-318c-43e8-8a89-bfcf46c68e14",
+        "agent_name": "text_bias_agent",
+        "bias_detected": true,
+        "bias_instances": [
+            {
+                "bias_type": "gender_bias",
+                "severity": "high",
+                "examples": [
+                    "\"they make your butt look amazing\"",
+                    "\"Sydney Sweeney Hazburg jeans\"",
+                    "\"You see what I did there, right?\""
+                ],
+                "context": "This advertisement uses sexual objectification and innuendo through multiple layers of wordplay. The phrase \"make your butt look amazing\" reduces the value proposition to a woman's body part and sexual appeal rather than product quality. The pairing of celebrity Sydney Sweeney's name with \"Hazburg jeans\" creates a double entendre—\"Hazburg\" phonetically resembles \"has burg\" or suggests \"has [body part],\" creating a sexual pun that associates the celebrity with her physical attributes. The meta-commentary (\"You see what I did there, right?\") acknowledges the wordplay while normalizing the objectification, making it seem clever rather than problematic. This strategy uses a female celebrity as a sexual prop to sell jeans.",
+                "confidence": 0.92,
+                "impact": "This language perpetuates the objectification of women by reducing them to body parts and sexual appeal. It teaches consumers (especially young audiences, given Sydney Sweeney's demographic) that women's value is tied to their physical appearance and sexual desirability, while using celebrity women as unwitting participants in their own sexualization for commercial gain."
+            },
+            {
+                "bias_type": "gender_bias",
+                "severity": "medium",
+                "examples": [
+                    "\"I'm not here to tell you to buy\"",
+                    "\"I definitely won't say\"",
+                    "\"this is not me telling you\""
+                ],
+                "context": "The repetitive disclaimers (\"I'm not here to tell you,\" \"I definitely won't say,\" \"this is not me telling you\") employ reverse psychology that could be read as dismissive or manipulative—a communication pattern sometimes associated with stereotypical male avoidance of direct engagement. While not explicitly gendered, the tone of deflection and the pairing with objectifying language about women's bodies creates a dynamic where the speaker distances themselves from accountability while still delivering the objectifying message.",
+                "confidence": 0.65,
+                "impact": "This rhetorical strategy normalizes indirect communication about women's bodies and can reinforce patterns where objectification is presented as casual or ironic rather than harmful."
+            }
+        ],
+        "overall_text_score": 7.97,
+        "recommendations": [
+            "Use gender-neutral language and avoid male-default terminology",
+            "Use gender-neutral language and avoid male-default terminology"
+        ],
+        "rag_similar_cases": [],
+        "timestamp": "2025-10-26T11:32:40.620635+00:00"
+    }
+}

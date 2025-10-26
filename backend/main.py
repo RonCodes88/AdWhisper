@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -37,59 +37,11 @@ async def startup_event():
 
 # Configuration
 ENABLE_AGENT_CALLS = True  # Set to False to disable agent communication
-INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/analyze"  # Ingestion agent REST endpoint
+INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/analyze"  # Ingestion agent REST endpoint (correct endpoint)
 
 
-def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):
-    """
-    Background task to call Ingestion Agent via REST
-    This runs AFTER the response is sent to the frontend (non-blocking)
-    """
-    print(f"\n{'='*70}")
-    print(f"📤 CALLING INGESTION AGENT (Background Task)")
-    print(f"{'='*70}")
-    print(f"📝 Request ID: {request_id}")
-    print(f"🎯 Endpoint: {INGESTION_AGENT_REST_ENDPOINT}")
-    
-    # Convert the payload to match the expected schema exactly
-    try:
-        # Format payload for YouTube ingestion agent
-        formatted_payload = {
-            "request_id": ingestion_payload["request_id"],
-            "content_type": ingestion_payload.get("content_type", "video"),
-            "video_url": ingestion_payload.get("video_url"),
-            "metadata": ingestion_payload.get("metadata", {})
-        }
-        
-        print(f"📦 Payload: {formatted_payload}")
-        
-        response = requests.post(
-            INGESTION_AGENT_REST_ENDPOINT,
-            json=formatted_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=30  # Increased timeout for processing
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"✅ SUCCESS - Ingestion Agent responded!")
-            print(f"📨 Status: {result.get('status', 'unknown')}")
-            print(f"💬 Message: {result.get('message', 'No message')}")
-            print(f"🆔 Request ID: {result.get('request_id', request_id)}")
-            print(f"📊 Agent is now processing YouTube video and routing to bias analysis agents...")
-        else:
-            print(f"⚠️ WARNING - YouTube Agent returned HTTP {response.status_code}")
-            print(f"Response: {response.text[:500]}")
-            
-    except requests.exceptions.ConnectionError:
-        print(f"❌ ERROR - Could not connect to Ingestion Agent")
-        print(f"   Make sure it's running: python agents/ingestion_agent.py")
-    except requests.exceptions.Timeout:
-        print(f"⏱️ ERROR - Ingestion Agent timed out (took > 30s)")
-    except Exception as e:
-        print(f"❌ ERROR - Unexpected error: {type(e).__name__}: {str(e)}")
-    finally:
-        print(f"{'='*70}\n")
+# Removed: call_ingestion_agent_background - no longer needed
+# We now call ingestion agent synchronously to wait for complete analysis
 
 
 # Request/Response Models
@@ -114,14 +66,14 @@ async def get_documents():
 
 
 @app.post("/api/analyze-youtube")
-async def analyze_youtube_video(request: YouTubeAnalysisRequest, background_tasks: BackgroundTasks):
+async def analyze_youtube_video(request: YouTubeAnalysisRequest):
     """
     Frontend calls this endpoint with YouTube URL.
-    Returns immediately with placeholder results.
-    Calls Ingestion Agent in background (non-blocking).
+    WAITS for complete analysis before returning.
+    Calls Ingestion Agent synchronously (blocking until scoring completes).
     
     Flow:
-    Frontend → FastAPI (instant response) → [Background: Ingestion Agent → Text/Visual Agents → Scoring Agent]
+    Frontend → FastAPI → Ingestion Agent → Text/Visual Agents → Scoring Agent → Response
     """
     print("\n" + "="*70)
     print("🎬 NEW REQUEST RECEIVED")
@@ -137,61 +89,76 @@ async def analyze_youtube_video(request: YouTubeAnalysisRequest, background_task
         # Create request payload for Ingestion Agent
         ingestion_payload = {
             "request_id": request_id,
-            "content_type": "video",  # This will be converted to ContentType enum by the agent
-            "text_content": None,  # Will be extracted by ingestion agent
-            "image_url": None,
+            "content_type": "video",
             "video_url": request.youtube_url,
             "metadata": {
                 "source": "youtube",
                 "youtube_url": request.youtube_url
-            },
-            "timestamp": ""
+            }
         }
         
-        # Add background task to call agent AFTER response is sent (if enabled)
+        # Call Ingestion Agent SYNCHRONOUSLY and WAIT for complete pipeline
         if ENABLE_AGENT_CALLS:
-            print(f"\n📋 Adding Ingestion Agent call to background tasks")
-            background_tasks.add_task(
-                call_ingestion_agent_background,
-                request_id,
-                ingestion_payload
-            )
-            agent_contacted = True
+            print(f"\n📤 Calling Ingestion Agent (SYNCHRONOUS - will wait for completion)")
+            print(f"🎯 Endpoint: {INGESTION_AGENT_REST_ENDPOINT}")
+            print(f"⏳ This may take 30-60 seconds for full analysis...")
+            
+            try:
+                response = requests.post(
+                    INGESTION_AGENT_REST_ENDPOINT,
+                    json=ingestion_payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=300  # 5 minute timeout for full pipeline
+                )
+                
+                if response.status_code == 200:
+                    final_report = response.json()
+                    print(f"✅ SUCCESS - Full analysis pipeline completed!")
+                    print(f"📊 Final Score: {final_report.get('overall_bias_score', 'N/A')}")
+                    print(f"🏷️  Bias Level: {final_report.get('bias_level', 'N/A')}")
+                    print(f"📋 Total Issues: {final_report.get('total_issues', 0)}")
+                    print(f"💡 Recommendations: {len(final_report.get('recommendations', []))}")
+                    agent_contacted = True
+                    
+                    # Return the complete final report to frontend
+                    print(f"✅ Returning complete bias report to frontend...")
+                    print("="*70 + "\n")
+                    return final_report
+                else:
+                    print(f"⚠️ WARNING - Ingestion Agent returned HTTP {response.status_code}")
+                    print(f"Response: {response.text[:500]}")
+                    agent_contacted = False
+                    
+            except requests.exceptions.ConnectionError:
+                print(f"❌ ERROR - Could not connect to Ingestion Agent")
+                print(f"   Make sure it's running: python agents/ingestion_agent.py")
+                raise HTTPException(status_code=503, detail="Ingestion Agent not available")
+            except requests.exceptions.Timeout:
+                print(f"⏱️ ERROR - Ingestion Agent timed out (took > 5 minutes)")
+                raise HTTPException(status_code=504, detail="Analysis timeout")
         else:
             print(f"\n⏭️  Skipping agent call (ENABLE_AGENT_CALLS = False)")
             agent_contacted = False
         
-        # Build response
+        # Build response - report is now ready!
         print(f"\n📦 Building response to frontend...")
         response_data = {
             "request_id": request_id,
             "youtube_url": request.youtube_url,
-            "status": "processing",
-            "message": "Analysis started - Ingestion Agent processing in background",
-            "agent_contacted": agent_contacted,
-            "bias_score": 7.5,
-            "text_bias": {
-                "score": 7.0,
-                "issues": ["Text bias analysis in progress"],
-                "examples": ["Sample example text"]
-            },
-            "visual_bias": {
-                "score": 8.0,
-                "issues": ["Visual bias analysis in progress"],
-                "examples": ["Sample example visual"]
-            },
-            "recommendations": [
-                "Consider using more inclusive language",
-                "Increase diversity in visual representation"
-            ]
+            "status": "completed",
+            "message": "Analysis completed - Final report is ready",
+            "agent_contacted": agent_contacted
         }
         
         print(f"✅ Response ready - Status: {response_data['status']}")
+        print(f"✅ Final report available at: GET /report/{request_id}")
         print(f"✅ Sending response to frontend...")
         print("="*70 + "\n")
         
         return response_data
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"\n❌ ERROR IN ENDPOINT")
         print(f"   Type: {type(e).__name__}")

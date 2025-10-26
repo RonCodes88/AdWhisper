@@ -19,6 +19,15 @@ interface Recommendation {
   impact: string
 }
 
+interface AgentStatus {
+  name: string
+  status: 'pending' | 'processing' | 'completed' | 'error'
+  score?: number
+  issuesFound?: number
+  message?: string
+  logs?: string[]
+}
+
 interface BiasAnalysisReport {
   request_id: string
   content_url?: string
@@ -53,56 +62,27 @@ export default function UploadPage() {
   const [analysisResult, setAnalysisResult] = useState<BiasAnalysisReport | null>(null)
   const [error, setError] = useState("")
   const [requestId, setRequestId] = useState<string | null>(null)
+  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([])
+  const [showLogs, setShowLogs] = useState(true)
 
-  // Poll scoring agent for final report
-  const pollForReport = async (reqId: string, maxAttempts = 30): Promise<BiasAnalysisReport> => {
-    console.log(`🔄 Starting to poll for report: ${reqId}`)
-    
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      console.log(`   Attempt ${attempt + 1}/${maxAttempts}`)
-      
-      try {
-        const response = await fetch(`http://localhost:8103/report/${reqId}`)
-        
-        if (!response.ok) {
-          console.log(`   ❌ Failed to fetch report: ${response.status}`)
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          continue
-        }
-        
-        const report: BiasAnalysisReport = await response.json()
-        console.log("   📊 Report received:", report)
-        
-        // Check if both analyses are complete
-        if (report.text_analysis_status === "completed" && 
-            report.visual_analysis_status === "completed") {
-          console.log("   ✅ Analysis complete!")
-          return report
-        }
-        
-        // Check for errors
-        if (report.text_analysis_status === "error" || 
-            report.visual_analysis_status === "error") {
-          throw new Error("Analysis failed")
-        }
-        
-        console.log("   ⏳ Analysis in progress, waiting...")
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-      } catch (err) {
-        console.log(`   ⚠️ Error polling: ${err}`)
-        await new Promise(resolve => setTimeout(resolve, 2000))
-      }
-    }
-    
-    throw new Error("Analysis timeout - please try again")
+  // Helper to add log to agent
+  const addAgentLog = (agentName: string, log: string) => {
+    setAgentStatuses(prev => prev.map(agent => 
+      agent.name === agentName
+        ? { ...agent, logs: [...(agent.logs || []), log] }
+        : agent
+    ))
   }
+
+  // No more polling or client-side aggregation needed!
+  // Backend returns the complete report directly.
 
   const handleYoutubeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setAnalysisResult(null)
     setRequestId(null)
+    setAgentStatuses([])
 
     console.log("========================================")
     console.log("🎬 YouTube Analysis Submission Started")
@@ -159,20 +139,32 @@ export default function UploadPage() {
       console.log("✅ Response parsed successfully:")
       console.log(result)
       
-      // Extract request_id from response
-      const reqId = result.request_id
-      if (!reqId) {
-        throw new Error("No request_id received from server")
-      }
+      // The result IS the final bias report! No need to poll!
+      console.log("🎉 Complete bias report received from backend!")
+      console.log(`📊 Overall Score: ${result.overall_bias_score || 'N/A'}`)
+      console.log(`🏷️  Bias Level: ${result.bias_level || 'Unknown'}`)
+      console.log(`📋 Total Issues: ${result.total_issues || 0}`)
+      console.log(`💡 Recommendations: ${result.recommendations?.length || 0}`)
       
-      console.log(`✅ Request ID: ${reqId}`)
+      const reqId = result.request_id
       setRequestId(reqId)
       
-      // Start polling for the final report
-      console.log("\n🔄 Polling scoring agent for final report...")
-      const finalReport = await pollForReport(reqId)
+      // Safely extract scores with defaults
+      const textScore = result.score_breakdown?.text_score ?? 5.0
+      const visualScore = result.score_breakdown?.visual_score ?? 5.0
+      const overallScore = result.overall_bias_score ?? 5.0
+      const totalIssues = result.total_issues ?? 0
       
-      setAnalysisResult(finalReport)
+      // Set all agent statuses to completed
+      setAgentStatuses([
+        { name: 'Ingestion Agent', status: 'completed', message: 'Video processed ✓' },
+        { name: 'Text Bias Agent', status: 'completed', score: textScore, message: `Text Score: ${textScore.toFixed(1)}/10` },
+        { name: 'Visual Bias Agent', status: 'completed', score: visualScore, message: `Visual Score: ${visualScore.toFixed(1)}/10` },
+        { name: 'Scoring Agent', status: 'completed', score: overallScore, issuesFound: totalIssues, message: `Final Score: ${overallScore.toFixed(1)}/10` }
+      ])
+      
+      // Set the final report directly
+      setAnalysisResult(result)
       console.log("✅ Final analysis result set in state")
       console.log("========================================\n")
       
@@ -188,7 +180,7 @@ export default function UploadPage() {
       
       // Check if it's a network error
       if (err instanceof TypeError && err.message.includes("fetch")) {
-        setError("Cannot connect to backend server. Make sure agents are running (ports 8000, 8103)")
+        setError("Cannot connect to backend server. Make sure agents are running (ports 8000, 8101, 8102)")
       }
     } finally {
       console.log("🔄 Cleaning up - setting loading to false")
@@ -208,6 +200,13 @@ export default function UploadPage() {
     if (score >= 7) return "Minor Bias"
     if (score >= 4) return "Moderate Bias"
     return "Significant Bias"
+  }
+
+  const getStatusColor = (status: string) => {
+    if (status === 'completed') return 'bg-green-500'
+    if (status === 'processing') return 'bg-yellow-500 animate-pulse'
+    if (status === 'error') return 'bg-red-500'
+    return 'bg-gray-400'
   }
 
   return (
@@ -298,6 +297,7 @@ export default function UploadPage() {
                 </div>
               </div>
 
+
               {/* Analysis Results Section */}
               {analysisResult && (
                 <div className="w-full max-w-[900px] mt-8 sm:mt-10">
@@ -308,17 +308,22 @@ export default function UploadPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h2 className="text-foreground text-2xl sm:text-3xl font-bold font-serif mb-2">Bias Analysis</h2>
-                          <p className="text-muted-foreground text-sm font-sans break-all">{analysisResult.content_url || youtubeUrl}</p>
+                          <p className="text-muted-foreground text-sm font-sans break-all">{youtubeUrl}</p>
                         </div>
                         <div className="flex flex-col items-end flex-shrink-0">
-                          <div className={`text-5xl sm:text-6xl font-bold font-serif ${getBiasScoreColor(analysisResult.overall_bias_score)}`}>
-                            {analysisResult.overall_bias_score.toFixed(1)}
+                          <div className={`text-5xl sm:text-6xl font-bold font-serif ${getBiasScoreColor(analysisResult.overall_bias_score ?? 5.0)}`}>
+                            {(analysisResult.overall_bias_score ?? 5.0).toFixed(1)}
                           </div>
                           <div className="text-sm text-muted-foreground font-sans">/ 10</div>
-                          <div className={`text-sm font-semibold mt-1 ${getBiasScoreColor(analysisResult.overall_bias_score)}`}>
+                          <div className={`text-sm font-semibold mt-1 ${getBiasScoreColor(analysisResult.overall_bias_score ?? 5.0)}`}>
                             {analysisResult.bias_level}
                           </div>
                         </div>
+                      </div>
+                      
+                      {/* Assessment */}
+                      <div className="mt-4 p-4 bg-muted/30 rounded-md">
+                        <p className="text-sm text-foreground font-sans leading-relaxed">{analysisResult.assessment}</p>
                       </div>
                     </div>
 
@@ -338,23 +343,14 @@ export default function UploadPage() {
                         
                         <div className="mb-3">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold text-foreground font-serif">{analysisResult.score_breakdown.text_score.toFixed(0)}</span>
+                            <span className="text-4xl font-bold text-foreground font-serif">{(analysisResult.score_breakdown?.text_score ?? 5.0).toFixed(1)}</span>
                             <span className="text-sm text-muted-foreground font-sans">/ 10</span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 text-sm">
-                          {analysisResult.text_analysis_status === "completed" ? (
-                            <>
                               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                              <p className="text-muted-foreground font-sans">Text bias analysis complete</p>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                              <p className="text-muted-foreground font-sans">Text bias analysis in progress</p>
-                            </>
-                          )}
+                          <p className="text-muted-foreground font-sans">Analysis complete</p>
                         </div>
                       </div>
 
@@ -371,46 +367,140 @@ export default function UploadPage() {
                         
                         <div className="mb-3">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold text-foreground font-serif">{analysisResult.score_breakdown.visual_score.toFixed(0)}</span>
+                            <span className="text-4xl font-bold text-foreground font-serif">{(analysisResult.score_breakdown?.visual_score ?? 5.0).toFixed(1)}</span>
                             <span className="text-sm text-muted-foreground font-sans">/ 10</span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 text-sm">
-                          {analysisResult.visual_analysis_status === "completed" ? (
-                            <>
                               <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                              <p className="text-muted-foreground font-sans">Visual bias analysis complete</p>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                              <p className="text-muted-foreground font-sans">Visual bias analysis in progress</p>
-                            </>
-                          )}
+                          <p className="text-muted-foreground font-sans">Analysis complete</p>
                         </div>
                       </div>
                     </div>
 
+                    {/* Top Concerns Section */}
+                    {analysisResult.top_concerns && analysisResult.top_concerns.length > 0 && (
+                      <div className="px-6 sm:px-8 py-6 border-t border-border bg-red-50/50">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                          </div>
+                          <h3 className="text-foreground text-lg font-semibold font-sans">Top Concerns</h3>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {analysisResult.top_concerns.map((concern: string, idx: number) => (
+                            <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-md border border-red-200">
+                              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <p className="text-sm text-foreground font-sans leading-relaxed flex-1">{concern}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bias Issues Details Section */}
+                    {analysisResult.bias_issues && analysisResult.bias_issues.length > 0 && (
+                      <div className="px-6 sm:px-8 py-6 border-t border-border">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                          </div>
+                          <h3 className="text-foreground text-lg font-semibold font-sans">Detailed Bias Findings</h3>
+                          <span className="ml-auto text-sm text-muted-foreground font-medium">
+                            {analysisResult.bias_issues.length} issue{analysisResult.bias_issues.length !== 1 ? 's' : ''} found
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                          {analysisResult.bias_issues.map((issue: BiasIssue, idx: number) => (
+                            <div key={idx} className="p-4 bg-muted/50 rounded-md border border-border">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    issue.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                                    issue.severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                                    issue.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {issue.severity.toUpperCase()}
+                                  </span>
+                                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    {issue.category.replace('_', ' ')}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {issue.source === 'text_bias_agent' ? '📝 Text' : '👁️ Visual'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-foreground font-sans leading-relaxed mb-2">
+                                {issue.description}
+                              </p>
+                              {issue.examples && issue.examples.length > 0 && (
+                                <div className="mt-2 p-2 bg-white/50 rounded border border-border/50">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Examples:</p>
+                                  {issue.examples.map((example, exIdx) => (
+                                    <p key={exIdx} className="text-xs text-foreground font-mono italic pl-2 border-l-2 border-border mb-1">
+                                      &ldquo;{example}&rdquo;
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Recommendations Section */}
                     {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
-                      <div className="px-6 sm:px-8 py-6 border-t border-border bg-muted/30">
+                      <div className="px-6 sm:px-8 py-6 border-t border-border bg-green-50/30">
                         <div className="flex items-center gap-2 mb-4">
-                          <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                             </svg>
                           </div>
-                          <h3 className="text-foreground text-lg font-semibold font-sans">Recommendations</h3>
+                          <h3 className="text-foreground text-lg font-semibold font-sans">Actionable Recommendations</h3>
                         </div>
                         
                         <div className="space-y-3">
                           {analysisResult.recommendations.map((rec: Recommendation, idx: number) => (
-                            <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-md border border-border/50">
-                              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <div key={idx} className="p-4 bg-white rounded-md border border-green-200 shadow-sm">
+                              <div className="flex items-start gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  rec.priority === 'critical' || rec.priority === 'high' ? 'bg-red-500' :
+                                  rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                                }`}>
                                 <span className="text-white text-sm font-bold">{idx + 1}</span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-sm font-semibold text-foreground">{rec.category}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                                      rec.priority === 'critical' || rec.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                      rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {rec.priority}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-foreground font-sans leading-relaxed mb-2">
+                                    <span className="font-medium">Action:</span> {rec.action}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground italic">
+                                    <span className="font-medium">Impact:</span> {rec.impact}
+                                  </p>
+                                </div>
                               </div>
-                              <p className="text-sm text-foreground font-sans leading-relaxed">{rec.action}</p>
                             </div>
                           ))}
                         </div>
