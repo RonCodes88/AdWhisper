@@ -53,34 +53,60 @@ class YouTubeProcessor:
             Dict with transcript text, segments, and metadata
         """
         try:
-            # Try to get transcript
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            # Create API instance (new API requires instantiation)
+            api = YouTubeTranscriptApi()
 
-            # Try to find transcript in preferred languages
-            transcript = None
-            for lang in languages:
+            # Try to fetch transcript
+            segments = None
+            used_language = None
+            is_auto_generated = False
+
+            try:
+                # Try to fetch with preferred languages
+                result = api.fetch(video_id, languages=languages)
+                # Convert snippets to dict format for compatibility
+                segments = [{"text": s.text, "start": s.start, "duration": s.duration}
+                           for s in result.snippets]
+                used_language = result.language_code
+                is_auto_generated = result.is_generated
+            except Exception as fetch_error:
+                # If direct fetch fails, try listing and selecting manually
                 try:
-                    transcript = transcript_list.find_transcript([lang])
-                    break
-                except NoTranscriptFound:
-                    continue
+                    transcript_list = api.list(video_id)
 
-            # If no transcript found, try auto-generated
-            if transcript is None:
-                try:
-                    transcript = transcript_list.find_generated_transcript(languages)
-                except NoTranscriptFound:
-                    return {
-                        "success": False,
-                        "error": "No transcript available",
-                        "text": "",
-                        "segments": [],
-                        "language": None,
-                        "is_generated": False
-                    }
+                    # Try manual transcripts first
+                    for transcript_info in transcript_list:
+                        if not transcript_info.is_generated and transcript_info.language_code in languages:
+                            fetched = transcript_info.fetch()
+                            segments = [{"text": s.text, "start": s.start, "duration": s.duration}
+                                       for s in fetched.snippets]
+                            used_language = fetched.language_code
+                            is_auto_generated = False
+                            break
 
-            # Fetch the transcript
-            segments = transcript.fetch()
+                    # If no manual transcript, try auto-generated
+                    if segments is None:
+                        for transcript_info in transcript_list:
+                            if transcript_info.is_generated and transcript_info.language_code in languages:
+                                fetched = transcript_info.fetch()
+                                segments = [{"text": s.text, "start": s.start, "duration": s.duration}
+                                           for s in fetched.snippets]
+                                used_language = fetched.language_code
+                                is_auto_generated = True
+                                break
+                except:
+                    pass
+
+            # If still no segments, return error
+            if segments is None:
+                return {
+                    "success": False,
+                    "error": "No transcript available for this video",
+                    "text": "",
+                    "segments": [],
+                    "language": None,
+                    "is_generated": False
+                }
 
             # Combine all text
             full_text = " ".join([seg['text'] for seg in segments])
@@ -89,8 +115,8 @@ class YouTubeProcessor:
                 "success": True,
                 "text": full_text,
                 "segments": segments,
-                "language": transcript.language_code,
-                "is_generated": transcript.is_generated,
+                "language": used_language,
+                "is_generated": is_auto_generated,
                 "error": None
             }
 

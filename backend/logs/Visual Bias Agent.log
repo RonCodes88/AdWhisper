@@ -1,0 +1,64 @@
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║       👁️ VISUAL BIAS AGENT - Ad Bias Detection               ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Visual Content Analysis and Bias Detection
+
+Capabilities:
+  ✓ Analyzes images and video for visual bias
+  ✓ RAG retrieval for similar visual patterns
+  ✓ Calculates diversity and representation metrics
+  ✓ Vision-LLM integration (GPT-4V, Claude Vision)
+  ✓ Detects subtle visual cues and microaggressions
+
+Visual Bias Types Detected:
+  • Representation bias (diversity, tokenism)
+  • Contextual bias (power dynamics, spatial positioning)
+  • Color symbolism bias
+  • Body representation stereotypes
+  • Cultural appropriation
+  • Tokenism patterns
+
+Metrics Analyzed:
+  • Gender distribution
+  • Ethnic representation
+  • Age distribution
+  • Body type diversity
+  • Power dynamics balance
+
+📍 Waiting for visual analysis requests...
+🛑 Stop with Ctrl+C
+    
+INFO:     [visual_bias_agent]: Starting agent with address: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: Starting agent with address: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: 🚀 Visual Bias Agent started successfully!
+INFO:     [visual_bias_agent]: 🚀 Visual Bias Agent started successfully!
+INFO:     [visual_bias_agent]: 📍 Agent address: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: 📍 Agent address: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: 🔧 Role: Visual Content Analysis and Bias Detection
+INFO:     [visual_bias_agent]: 🔧 Role: Visual Content Analysis and Bias Detection
+INFO:     [visual_bias_agent]: 🌐 Endpoint: http://localhost:8102/submit
+INFO:     [visual_bias_agent]: 🌐 Endpoint: http://localhost:8102/submit
+INFO:     [visual_bias_agent]: 👁️ Vision-LLM Integration: Ready for visual analysis
+INFO:     [visual_bias_agent]: 👁️ Vision-LLM Integration: Ready for visual analysis
+INFO:     [visual_bias_agent]: ⚡ Ready to analyze visual content for bias
+INFO:     [visual_bias_agent]: ⚡ Ready to analyze visual content for bias
+INFO:     [visual_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8102&address=agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8102&address=agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [visual_bias_agent]: Starting server on http://0.0.0.0:8102 (Press CTRL+C to quit)
+INFO:     [visual_bias_agent]: Starting server on http://0.0.0.0:8102 (Press CTRL+C to quit)
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!

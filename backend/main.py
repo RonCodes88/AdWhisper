@@ -33,7 +33,7 @@ async def startup_event():
 
 # Configuration
 ENABLE_AGENT_CALLS = True  # Set to False to disable agent communication
-INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/submit"
+INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/ingest"  # Changed from /submit (reserved)
 
 
 def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):

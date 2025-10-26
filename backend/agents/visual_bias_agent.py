@@ -16,6 +16,21 @@ from pydantic import Field
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
 from enum import Enum
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+# Import shared models
+from agents.shared_models import (
+    EmbeddingPackage,
+    VisualBiasReport,
+    BiasAnalysisComplete,
+    BiasCategory,
+    create_bias_instance_dict,
+    AgentError
+)
 
 
 # Visual bias types
@@ -124,29 +139,49 @@ async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Visual Bias Agent shutting down...")
 
 
-@visual_bias_protocol.on_message(model=VisualAnalysisRequest, replies=VisualBiasReport)
-async def handle_visual_analysis(ctx: Context, sender: str, msg: VisualAnalysisRequest):
+@visual_bias_protocol.on_message(model=EmbeddingPackage, replies={BiasAnalysisComplete, AgentError})
+async def handle_visual_analysis(ctx: Context, sender: str, msg: EmbeddingPackage):
     """
     Analyze visual content for bias using Vision-LLM and RAG retrieval.
     """
     try:
-        ctx.logger.info(f"📨 Received visual analysis request: {msg.request_id}")
-        media_type = "image" if msg.image_url else "video"
-        media_url = msg.image_url or msg.video_url
+        ctx.logger.info(f"📨 Received embedding package for visual analysis: {msg.request_id}")
+        ctx.logger.info(f"   - Has visual embedding: {msg.visual_embedding is not None}")
+
+        # Extract media info from metadata
+        media_url = msg.metadata.get("image_url") if msg.metadata else None
+        if not media_url and msg.metadata:
+            media_url = msg.metadata.get("youtube", {}).get("thumbnail_url") if isinstance(msg.metadata.get("youtube"), dict) else None
+
+        media_type = "image" if media_url else "video"
         ctx.logger.info(f"🎨 Media type: {media_type}, URL: {media_url}")
         
+        # Check if we have visual content to analyze
+        if not msg.visual_embedding and not media_url:
+            ctx.logger.warning(f"⚠️ No visual content for request {msg.request_id}")
+            error_msg = AgentError(
+                request_id=msg.request_id,
+                agent_name="visual_bias_agent",
+                error_type="no_content",
+                error_message="No visual content provided"
+            )
+            await ctx.send(SCORING_AGENT_ADDRESS, error_msg)
+            return
+
         # Step 1: Extract visual features
         ctx.logger.info(f"🔍 Extracting visual features...")
-        if media_type == "video":
-            visual_frames = await extract_video_keyframes(ctx, msg.video_url)
+        if media_type == "video" and media_url:
+            visual_frames = await extract_video_keyframes(ctx, media_url)
             ctx.logger.info(f"🎬 Extracted {len(visual_frames)} keyframes from video")
+        elif media_url:
+            visual_frames = [media_url]
         else:
-            visual_frames = [msg.image_url]
-        
+            visual_frames = []
+
         # Step 2: Analyze visual content with Vision-LLM
         ctx.logger.info(f"👁️ Analyzing visual content with Vision-LLM...")
         initial_analysis = await analyze_visual_with_llm(ctx, visual_frames)
-        
+
         # Step 3: RAG RETRIEVAL - Query ChromaDB for similar visual patterns
         ctx.logger.info(f"🔎 RAG RETRIEVAL: Querying ChromaDB for similar visual patterns...")
         rag_results = await query_visual_patterns(ctx, msg.visual_embedding, msg.chromadb_collection_id)
@@ -177,29 +212,37 @@ async def handle_visual_analysis(ctx: Context, sender: str, msg: VisualAnalysisR
         # Step 8: Generate recommendations
         ctx.logger.info(f"💡 Generating recommendations...")
         recommendations = await generate_visual_recommendations(ctx, bias_detections, diversity_metrics)
-        
-        # Step 9: Create report
-        report = VisualBiasReport(
-            request_id=msg.request_id,
-            agent="visual_bias_agent",
-            bias_detected=len(bias_detections) > 0,
-            bias_types=bias_detections,
-            diversity_metrics=diversity_metrics,
-            overall_visual_score=visual_score,
-            recommendations=recommendations,
-            rag_references=[ref["id"] for ref in rag_results],
-            confidence=sum(bd.confidence for bd in bias_detections) / len(bias_detections) if bias_detections else 1.0
-        )
-        
+
+        # Step 9: Create report - convert bias detections to dicts
+        bias_instances_dicts = [
+            {
+                "bias_type": bd.bias_type.value,
+                "severity": bd.severity.value,
+                "examples": bd.examples or [],
+                "context": bd.context,
+                "confidence": bd.confidence
+            }
+            for bd in bias_detections
+        ]
+
+        # Create visual bias report dict
+        report_dict = {
+            "request_id": msg.request_id,
+            "agent_name": "visual_bias_agent",
+            "bias_detected": len(bias_detections) > 0,
+            "bias_instances": bias_instances_dicts,
+            "overall_visual_score": visual_score,
+            "diversity_metrics": diversity_metrics.dict() if hasattr(diversity_metrics, 'dict') else diversity_metrics,
+            "recommendations": recommendations,
+            "rag_similar_cases": [ref["id"] for ref in rag_results],
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+
         ctx.logger.info(f"✅ Analysis complete: Score={visual_score:.1f}, Biases detected={len(bias_detections)}")
-        
-        # Step 10: Send report back to sender and to Scoring Agent
-        await ctx.send(sender, report)
-        
-        if SCORING_AGENT_ADDRESS:
-            ctx.logger.info(f"📤 Forwarding report to Scoring Agent: {SCORING_AGENT_ADDRESS}")
-            # await ctx.send(SCORING_AGENT_ADDRESS, report)
-        
+
+        # Step 10: Send to Scoring Agent
+        await send_to_scoring_agent(ctx, msg.request_id, report_dict)
+
         ctx.logger.info(f"✅ Visual analysis for {msg.request_id} completed successfully")
         
     except Exception as e:
@@ -434,6 +477,25 @@ async def generate_visual_recommendations(
     
     ctx.logger.info(f"💡 Generated {len(recommendations)} recommendations")
     return recommendations
+
+
+async def send_to_scoring_agent(ctx: Context, request_id: str, report_dict: Dict[str, Any]):
+    """
+    Send analysis results to Scoring Agent.
+    """
+    if not SCORING_AGENT_ADDRESS:
+        ctx.logger.warning(f"⚠️ Scoring agent address not set")
+        return
+
+    analysis_complete = BiasAnalysisComplete(
+        request_id=request_id,
+        sender_agent="visual_bias_agent",
+        report=report_dict
+    )
+
+    ctx.logger.info(f"📤 Sending results to Scoring Agent")
+    await ctx.send(SCORING_AGENT_ADDRESS, analysis_complete)
+    ctx.logger.info(f"✅ Results sent successfully")
 
 
 # Include protocol

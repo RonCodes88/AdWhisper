@@ -16,6 +16,17 @@ from pydantic import Field
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
 from enum import Enum
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+# Import shared models
+from agents.shared_models import (
+    BiasAnalysisComplete,
+    AgentError
+)
 
 
 # Message Models (importing from other agents)
@@ -160,6 +171,188 @@ async def startup(ctx: Context):
 @scoring_agent.on_event("shutdown")
 async def shutdown(ctx: Context):
     ctx.logger.info("🛑 Scoring Agent shutting down...")
+
+
+@scoring_protocol.on_message(model=BiasAnalysisComplete, replies=FinalBiasReport)
+async def handle_bias_analysis_complete(ctx: Context, sender: str, msg: BiasAnalysisComplete):
+    """
+    Receive results from Text or Visual Bias agents.
+    Wait for both agents before generating final report.
+    """
+    try:
+        ctx.logger.info(f"📨 Received {msg.sender_agent} report for request: {msg.request_id}")
+
+        # Store the report in context storage
+        storage_key = f"reports_{msg.request_id}"
+        reports = ctx.storage.get(storage_key) or {}
+
+        # Add this agent's report
+        if msg.sender_agent == "text_bias_agent":
+            reports["text"] = msg.report
+            ctx.logger.info(f"✅ Text bias report stored")
+        elif msg.sender_agent == "visual_bias_agent":
+            reports["visual"] = msg.report
+            ctx.logger.info(f"✅ Visual bias report stored")
+
+        # Update storage
+        ctx.storage.set(storage_key, reports)
+
+        # Check if we have both reports
+        has_text = "text" in reports
+        has_visual = "visual" in reports
+
+        ctx.logger.info(f"📊 Report status for {msg.request_id}: Text={has_text}, Visual={has_visual}")
+
+        # If we have both, generate final report
+        if has_text and has_visual:
+            ctx.logger.info(f"🎯 Both reports received! Generating final assessment...")
+
+            # Create a ScoringRequest-like structure
+            text_report = reports["text"]
+            visual_report = reports["visual"]
+
+            # Extract ChromaDB collection ID from either report
+            collection_id = text_report.get("chromadb_collection_id", msg.request_id)
+
+            # Process the final report
+            final_report = await process_final_scoring(
+                ctx,
+                msg.request_id,
+                text_report,
+                visual_report,
+                collection_id
+            )
+
+            # Clean up storage
+            ctx.storage.set(storage_key, None)
+
+            ctx.logger.info(f"✅ Final report generated successfully!")
+            ctx.logger.info(f"📊 Final Score: {final_report.overall_bias_score:.1f}/10")
+
+            # TODO: Send report back to FastAPI/Frontend
+            # For now just log it
+
+        else:
+            ctx.logger.info(f"⏳ Waiting for remaining reports...")
+            if not has_text:
+                ctx.logger.info(f"   - Still waiting for: Text Bias Agent")
+            if not has_visual:
+                ctx.logger.info(f"   - Still waiting for: Visual Bias Agent")
+
+    except Exception as e:
+        ctx.logger.error(f"❌ Error handling bias analysis: {e}")
+
+
+@scoring_protocol.on_message(model=AgentError)
+async def handle_agent_error(ctx: Context, sender: str, msg: AgentError):
+    """
+    Handle errors from bias agents.
+    """
+    ctx.logger.warning(f"⚠️ Received error from {msg.agent_name} for request {msg.request_id}")
+    ctx.logger.warning(f"   Error type: {msg.error_type}")
+    ctx.logger.warning(f"   Error message: {msg.error_message}")
+
+    # Still try to generate a report with partial data
+    # This allows the system to continue even if one agent fails
+
+
+async def process_final_scoring(
+    ctx: Context,
+    request_id: str,
+    text_report: Dict[str, Any],
+    visual_report: Dict[str, Any],
+    collection_id: str
+) -> FinalBiasReport:
+    """
+    Process final scoring with both reports.
+    """
+    start_time = datetime.now(UTC)
+
+    text_score = text_report.get("overall_text_score", 5.0)
+    visual_score = visual_report.get("overall_visual_score", 5.0)
+
+    ctx.logger.info(f"📊 Text Score: {text_score:.1f}, Visual Score: {visual_score:.1f}")
+
+    # Step 2: RAG RETRIEVAL - Query ChromaDB for benchmark cases
+    ctx.logger.info(f"🔎 RAG RETRIEVAL: Querying ChromaDB for benchmark cases...")
+    benchmark_cases = await query_case_benchmarks(ctx, text_score, visual_score, collection_id)
+    ctx.logger.info(f"✅ Found {len(benchmark_cases)} similar benchmark cases")
+
+    # Step 3: Detect intersectional bias
+    ctx.logger.info(f"🔀 Analyzing intersectional bias patterns...")
+    intersectional_penalty = await detect_intersectional_bias(ctx, text_report, visual_report)
+    ctx.logger.info(f"⚠️ Intersectional penalty: {intersectional_penalty:.2f}")
+
+    # Step 4: Calculate weighted final score
+    ctx.logger.info(f"⚖️ Calculating weighted final score...")
+    final_score = await calculate_weighted_score(
+        ctx,
+        text_score,
+        visual_score,
+        intersectional_penalty,
+        SCORING_WEIGHTS
+    )
+    ctx.logger.info(f"🎯 Final weighted score: {final_score:.1f}")
+
+    # Step 5: Aggregate all bias issues
+    ctx.logger.info(f"📑 Aggregating bias issues...")
+    bias_issues = await aggregate_bias_issues(ctx, text_report, visual_report)
+    ctx.logger.info(f"📋 Total issues aggregated: {len(bias_issues)}")
+
+    # Step 6: Categorize by severity
+    severity_counts = categorize_by_severity(bias_issues)
+    ctx.logger.info(f"🏷️ Severity breakdown: High={severity_counts['high']}, Medium={severity_counts['medium']}, Low={severity_counts['low']}")
+
+    # Step 7: Extract top concerns
+    ctx.logger.info(f"🎯 Identifying top concerns...")
+    top_concerns = extract_top_concerns(bias_issues, max_concerns=5)
+
+    # Step 8: Generate recommendations
+    ctx.logger.info(f"💡 Generating recommendations...")
+    recommendations = await generate_comprehensive_recommendations(ctx, bias_issues, final_score)
+    ctx.logger.info(f"✅ Generated {len(recommendations)} recommendations")
+
+    # Step 9: Generate assessment text
+    ctx.logger.info(f"📝 Generating assessment text...")
+    assessment = generate_assessment_text(final_score, len(bias_issues), severity_counts)
+
+    # Step 10: Calculate processing time
+    end_time = datetime.now(UTC)
+    processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
+
+    # Step 11: Create final report
+    final_report = FinalBiasReport(
+        request_id=request_id,
+        overall_bias_score=final_score,
+        assessment=assessment,
+        score_breakdown=ScoreBreakdown(
+            text_score=text_score,
+            visual_score=visual_score,
+            intersectional_penalty=intersectional_penalty,
+            weighted_score=final_score
+        ),
+        total_issues=len(bias_issues),
+        high_severity_count=severity_counts["high"],
+        medium_severity_count=severity_counts["medium"],
+        low_severity_count=severity_counts["low"],
+        bias_issues=bias_issues,
+        top_concerns=top_concerns,
+        recommendations=recommendations,
+        similar_cases=[case["id"] for case in benchmark_cases],
+        benchmark_comparison={
+            "average_score": sum(c["score"] for c in benchmark_cases) / len(benchmark_cases) if benchmark_cases else 5.0,
+            "percentile": calculate_percentile(final_score, benchmark_cases)
+        },
+        confidence=calculate_overall_confidence(text_report, visual_report),
+        processing_time_ms=processing_time_ms
+    )
+
+    ctx.logger.info(f"✅ Final report generated: Score={final_score:.1f}, Issues={len(bias_issues)}, Time={processing_time_ms}ms")
+
+    # Store results in ChromaDB for future RAG
+    await store_final_report_in_chromadb(ctx, final_report)
+
+    return final_report
 
 
 @scoring_protocol.on_message(model=ScoringRequest, replies=FinalBiasReport)

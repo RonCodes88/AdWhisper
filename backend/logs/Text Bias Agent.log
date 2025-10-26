@@ -1,0 +1,57 @@
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║        🧠 TEXT BIAS AGENT - Ad Bias Detection                ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Text Content Analysis and Bias Detection
+
+Capabilities:
+  ✓ Analyzes text for linguistic bias patterns
+  ✓ RAG retrieval from ChromaDB for similar cases
+  ✓ Detects gender, racial, age, socioeconomic bias
+  ✓ ASI:ONE LLM integration for intelligent analysis
+  ✓ Provides confidence scores and recommendations
+
+Bias Types Detected:
+  • Gender bias (stereotyping, exclusionary language)
+  • Racial/ethnic bias (cultural appropriation, stereotypes)
+  • Age bias (ageism, generational stereotypes)
+  • Socioeconomic bias (class assumptions)
+  • Disability bias (ableist language)
+  • LGBTQ+ bias (heteronormative assumptions)
+
+📍 Waiting for text analysis requests...
+🛑 Stop with Ctrl+C
+    
+INFO:     [text_bias_agent]: Starting agent with address: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: Starting agent with address: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: 🚀 Text Bias Agent started successfully!
+INFO:     [text_bias_agent]: 🚀 Text Bias Agent started successfully!
+INFO:     [text_bias_agent]: 📍 Agent address: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: 📍 Agent address: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: 🔧 Role: Text Content Analysis and Bias Detection
+INFO:     [text_bias_agent]: 🔧 Role: Text Content Analysis and Bias Detection
+INFO:     [text_bias_agent]: 🌐 Endpoint: http://localhost:8101/submit
+INFO:     [text_bias_agent]: 🌐 Endpoint: http://localhost:8101/submit
+INFO:     [text_bias_agent]: 🧠 ASI:ONE Integration: Ready for LLM-powered analysis
+INFO:     [text_bias_agent]: 🧠 ASI:ONE Integration: Ready for LLM-powered analysis
+INFO:     [text_bias_agent]: ⚡ Ready to analyze text content for bias
+INFO:     [text_bias_agent]: ⚡ Ready to analyze text content for bias
+INFO:     [text_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8101&address=agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8101&address=agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [text_bias_agent]: Starting server on http://0.0.0.0:8101 (Press CTRL+C to quit)
+INFO:     [text_bias_agent]: Starting server on http://0.0.0.0:8101 (Press CTRL+C to quit)
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!

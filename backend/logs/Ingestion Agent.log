@@ -1,0 +1,162 @@
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║          🚀 INGESTION AGENT - Ad Bias Detection              ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Data Reception, Preprocessing, and Embedding Generation
+
+Capabilities:
+  ✓ Receives ad content (text, images, videos)
+  ✓ Generates embeddings (text + visual)
+  ✓ Stores in ChromaDB for RAG retrieval
+  ✓ Routes to specialized analysis agents
+
+Endpoints:
+  • Agent Protocol: http://localhost:8100/submit
+  • REST API: http://localhost:8100/analyze
+
+📍 Waiting for requests...
+🛑 Stop with Ctrl+C
+    
+INFO:     [ingestion_agent]: Starting agent with address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: Starting agent with address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: 🚀 Ingestion Agent started successfully!
+INFO:     [ingestion_agent]: 🚀 Ingestion Agent started successfully!
+INFO:     [ingestion_agent]: 📍 Agent address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: 📍 Agent address: agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: 🔧 Role: Data Reception, Preprocessing, and Embedding Generation
+INFO:     [ingestion_agent]: 🔧 Role: Data Reception, Preprocessing, and Embedding Generation
+INFO:     [ingestion_agent]: 🌐 Endpoint: http://localhost:8100/submit
+INFO:     [ingestion_agent]: 🌐 Endpoint: http://localhost:8100/submit
+INFO:     [ingestion_agent]: ⚡ Ready to receive ad content for bias analysis
+INFO:     [ingestion_agent]: ⚡ Ready to receive ad content for bias analysis
+INFO:     [ingestion_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8100&address=agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8100&address=agent1qwn9p664w2yl59z6n7akdzhfmeqk3hquv82khv99tjdmk3w7x7w464vhe7p
+INFO:     [ingestion_agent]: Starting server on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     [ingestion_agent]: Starting server on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
+INFO:     [ingestion_agent]: 📨 REST API: Received content request: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: 📨 REST API: Received content request: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: 🔄 Preprocessing content for request caadaddb-0592-4312-85df-f5aec346c2f7...
+INFO:     [ingestion_agent]: 🔄 Preprocessing content for request caadaddb-0592-4312-85df-f5aec346c2f7...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
+INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]: ✅ Content preprocessed for request caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: ✅ Content preprocessed for request caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: 🧠 Generating embeddings for request caadaddb-0592-4312-85df-f5aec346c2f7...
+INFO:     [ingestion_agent]: 🧠 Generating embeddings for request caadaddb-0592-4312-85df-f5aec346c2f7...
+INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
+INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: mps
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.06it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.05it/s]
+INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
+INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
+INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
+INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
+INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:sentence_transformers.SentenceTransformer:Use pytorch device_name: mps
+INFO:sentence_transformers.SentenceTransformer:Load pretrained SentenceTransformer: clip-ViT-B-32
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 22.58it/s]
+INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
+INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
+INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
+INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:chromadb.telemetry.product.posthog:Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
+INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
+INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
+INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
+INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]:    - Text embedding: True
+INFO:     [ingestion_agent]:    - Text embedding: True
+INFO:     [ingestion_agent]:    - Visual embedding: True
+INFO:     [ingestion_agent]:    - Visual embedding: True
+INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: caadaddb-0592-4312-85df-f5aec346c2f7
+INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
+INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
+INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
+INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
+INFO:     [ingestion_agent]: 📨 REST API: Received content request: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: 📨 REST API: Received content request: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: 🔄 Preprocessing content for request 687791fa-5367-47c1-81e4-2b37da780532...
+INFO:     [ingestion_agent]: 🔄 Preprocessing content for request 687791fa-5367-47c1-81e4-2b37da780532...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
+INFO:     [ingestion_agent]: 🎬 Detected YouTube URL, extracting content...
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
+INFO:     [ingestion_agent]: ✅ YouTube content extracted successfully
+INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]:    - Transcript: 151 characters
+INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]:    - Thumbnail URL: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]: ✅ Content preprocessed for request 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: ✅ Content preprocessed for request 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: 🧠 Generating embeddings for request 687791fa-5367-47c1-81e4-2b37da780532...
+INFO:     [ingestion_agent]: 🧠 Generating embeddings for request 687791fa-5367-47c1-81e4-2b37da780532...
+INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
+INFO:     [ingestion_agent]: 🧠 Generating text embedding (length: 151 chars)
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.40it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  5.40it/s]
+INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
+INFO:     [ingestion_agent]: ✅ Generated text embedding: 384-dimensional vector
+INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
+INFO:     [ingestion_agent]: ✅ Text embedding generated (dim: 384)
+INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+INFO:     [ingestion_agent]: 🧠 Generating visual embedding for: https://img.youtube.com/vi/TVGDny9eneo/maxresdefault.jpg
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 38.82it/s]
+INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
+INFO:     [ingestion_agent]: ✅ Generated visual embedding: 512-dimensional vector
+INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
+INFO:     [ingestion_agent]: ✅ Visual embedding generated (dim: 512)
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB...
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: 💾 Storing embeddings in ChromaDB for request 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
+INFO:     [ingestion_agent]:    ✅ Text embedding stored (384-dim)
+INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
+INFO:     [ingestion_agent]:    ✅ Visual embedding stored (512-dim)
+INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: ✅ Stored 2 embedding(s) in ChromaDB: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]:    - Text embedding: True
+INFO:     [ingestion_agent]:    - Text embedding: True
+INFO:     [ingestion_agent]:    - Visual embedding: True
+INFO:     [ingestion_agent]:    - Visual embedding: True
+INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: ✅ Stored in ChromaDB collection: 687791fa-5367-47c1-81e4-2b37da780532
+INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
+INFO:     [ingestion_agent]: 🔀 Routing content to analysis agents...
+INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing to Text Bias Agent: agent1q2f7k0hv7p63y9fjux702n68kyp3gdadljlfal4xpawylnxf2pvzjsppdlv
+INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: 📤 Routing to Visual Bias Agent: agent1qtnatq0rhrj2pauyg2a8dgf56uqkf6tw3757z806w6c57zkw9nry2my2933
+INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)
+INFO:     [ingestion_agent]: ✅ Content routed to 2 analysis agent(s)

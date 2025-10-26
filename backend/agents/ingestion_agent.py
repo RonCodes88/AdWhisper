@@ -48,7 +48,7 @@ ingestion_agent = Agent(
     seed="ad_bias_ingestion_agent_unique_seed_2024",
     port=8100,
     endpoint=["http://localhost:8100/submit"],
-    mailbox=True  # Enable for Agentverse integration
+    mailbox=False  # Set to False for local REST API access (True for Agentverse)
 )
 
 # Protocol for ingestion
@@ -329,55 +329,76 @@ async def store_in_chromadb(
 ) -> str:
     """
     Store embeddings in ChromaDB for future RAG retrieval.
-    
-    Stores both text and visual embeddings along with metadata.
-    Uses the primary embedding (text or visual) for vector search.
+
+    Stores text and visual embeddings in separate collections to handle
+    different embedding dimensions (384 for text, 512 for visual).
     """
     ctx.logger.info(f"💾 Storing embeddings in ChromaDB for request {request_id}")
-    
+
     try:
         # Get ChromaDB instance
         chroma_db = get_chroma_db()
-        collection = chroma_db.collection
         
-        # Prepare metadata
+        # Prepare metadata (ChromaDB only supports str, int, float, bool, None)
         storage_metadata = {
             "request_id": request_id,
             "timestamp": datetime.now(UTC).isoformat(),
             "has_text_embedding": text_embedding is not None,
             "has_visual_embedding": visual_embedding is not None,
         }
-        
-        # Add custom metadata if provided
+
+        # Flatten custom metadata if provided (ChromaDB doesn't support nested dicts or None)
         if metadata:
-            storage_metadata.update(metadata)
-        
-        # Determine which embedding to use as primary (for vector search)
-        # Prefer text embedding, fallback to visual
-        primary_embedding = text_embedding if text_embedding else visual_embedding
-        
-        if primary_embedding is None:
-            ctx.logger.warning(f"⚠️ No embeddings to store for request {request_id}")
-            return f"no_embedding_{request_id}"
-        
+            for key, value in metadata.items():
+                if isinstance(value, dict):
+                    # Flatten nested dicts with dot notation
+                    for nested_key, nested_value in value.items():
+                        flat_key = f"{key}.{nested_key}"
+                        # Only add if value is a supported type and NOT None
+                        if nested_value is not None and isinstance(nested_value, (str, int, float, bool)):
+                            storage_metadata[flat_key] = nested_value
+                elif value is not None and isinstance(value, (str, int, float, bool)):
+                    storage_metadata[key] = value
+                # Skip None values and unsupported types (lists, objects, etc.)
+
         # Create document content
         document_content = f"Ad content - Request ID: {request_id}"
         if metadata and "description" in metadata:
             document_content = metadata["description"]
-        
-        # Store in ChromaDB with explicit embedding
-        collection.add(
-            embeddings=[primary_embedding],
-            documents=[document_content],
-            metadatas=[storage_metadata],
-            ids=[request_id]
-        )
-        
-        ctx.logger.info(f"✅ Stored embeddings in ChromaDB: {request_id}")
+
+        # Store embeddings in separate collections based on type
+        stored_count = 0
+
+        # Store text embedding (384-dim)
+        if text_embedding is not None:
+            chroma_db.text_collection.add(
+                embeddings=[text_embedding],
+                documents=[document_content],
+                metadatas=[storage_metadata],
+                ids=[f"text_{request_id}"]
+            )
+            ctx.logger.info(f"   ✅ Text embedding stored (384-dim)")
+            stored_count += 1
+
+        # Store visual embedding (512-dim)
+        if visual_embedding is not None:
+            chroma_db.visual_collection.add(
+                embeddings=[visual_embedding],
+                documents=[document_content],
+                metadatas=[storage_metadata],
+                ids=[f"visual_{request_id}"]
+            )
+            ctx.logger.info(f"   ✅ Visual embedding stored (512-dim)")
+            stored_count += 1
+
+        if stored_count == 0:
+            ctx.logger.warning(f"⚠️ No embeddings to store for request {request_id}")
+            return f"no_embedding_{request_id}"
+
+        ctx.logger.info(f"✅ Stored {stored_count} embedding(s) in ChromaDB: {request_id}")
         ctx.logger.info(f"   - Text embedding: {text_embedding is not None}")
         ctx.logger.info(f"   - Visual embedding: {visual_embedding is not None}")
-        ctx.logger.info(f"   - Embedding dimension: {len(primary_embedding)}")
-        
+
         return request_id
         
     except Exception as e:
@@ -418,11 +439,13 @@ async def route_to_analysis_agents(
 
 
 # REST endpoint for FastAPI to submit content
-@ingestion_agent.on_rest_post("/submit", AdContentRequest, IngestionAcknowledgement)
+# NOTE: /submit is reserved by uAgents, so we use /ingest instead
+@ingestion_agent.on_rest_post("/ingest", AdContentRequest, IngestionAcknowledgement)
 async def rest_submit_content(ctx: Context, req: AdContentRequest) -> IngestionAcknowledgement:
     """
     REST endpoint for receiving ad content from FastAPI backend.
     This allows FastAPI to submit content via HTTP POST.
+    Usage: POST http://localhost:8100/ingest
     """
     ctx.logger.info(f"📨 REST API: Received content request: {req.request_id}")
 

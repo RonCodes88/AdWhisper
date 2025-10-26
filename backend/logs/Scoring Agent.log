@@ -1,0 +1,61 @@
+WARNING:  [text_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [visual_bias_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+WARNING:  [scoring_agent]: Endpoint configuration overrides mailbox setting.
+
+╔══════════════════════════════════════════════════════════════╗
+║        ⚖️ SCORING AGENT - Ad Bias Detection                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+Role: Result Aggregation and Final Bias Assessment
+
+Capabilities:
+  ✓ Aggregates Text and Visual Bias reports
+  ✓ Detects intersectional bias patterns
+  ✓ RAG retrieval for benchmark comparison
+  ✓ Calculates weighted final scores
+  ✓ Generates comprehensive recommendations
+
+Scoring Scale (0-10):
+  • 0-3: Significant bias (high concern)
+  • 4-6: Moderate bias (needs revision)
+  • 7-8: Minor bias (minor improvements)
+  • 9-10: Minimal bias (approved)
+
+Scoring Weights:
+  • Text: 40%
+  • Visual: 40%
+  • Intersectional: 20%
+
+📍 Waiting for agent reports to aggregate...
+🛑 Stop with Ctrl+C
+    
+INFO:     [scoring_agent]: Starting agent with address: agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: Starting agent with address: agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: 🚀 Scoring Agent started successfully!
+INFO:     [scoring_agent]: 🚀 Scoring Agent started successfully!
+INFO:     [scoring_agent]: 📍 Agent address: agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: 📍 Agent address: agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: 🔧 Role: Result Aggregation and Final Bias Assessment
+INFO:     [scoring_agent]: 🔧 Role: Result Aggregation and Final Bias Assessment
+INFO:     [scoring_agent]: 🌐 Endpoint: http://localhost:8103/submit
+INFO:     [scoring_agent]: 🌐 Endpoint: http://localhost:8103/submit
+INFO:     [scoring_agent]: ⚖️ Scoring Weights: Text=0.4, Visual=0.4, Intersectional=0.2
+INFO:     [scoring_agent]: ⚖️ Scoring Weights: Text=0.4, Visual=0.4, Intersectional=0.2
+INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports
+INFO:     [scoring_agent]: ⚡ Ready to aggregate and score bias reports
+INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8103&address=agent1qv8q8vexn2l4hx08m30ecu329g0gfw3ede4ngf7j2gg756er4y5wcqlx9s8
+INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
+INFO:     [scoring_agent]: Starting server on http://0.0.0.0:8103 (Press CTRL+C to quit)
+INFO:     [ingestion_agent]: Manifest published successfully: ingestion_protocol
+INFO:     [visual_bias_agent]: Manifest published successfully: visual_bias_protocol
+INFO:     [text_bias_agent]: Manifest published successfully: text_bias_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [scoring_agent]: Manifest published successfully: scoring_protocol
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Registering on almanac contract...
+INFO:     [uagents.registration]: Registering on almanac contract...complete
