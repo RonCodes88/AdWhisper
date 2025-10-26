@@ -6,3 +6,4 @@ adwhisper
 .env
 .venv
 uploads/
+.DS_Store

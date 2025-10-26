@@ -23,6 +23,7 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from chroma import ChromaDB
+from agents.shared_models import BiasCategory, BiasInstance, AgentError, BiasAnalysisComplete
 
 
 # Severity levels
@@ -51,7 +52,7 @@ class TextAnalysisRequest(Model):
 
 class BiasDetection(Model):
     """Individual bias detection result"""
-    bias_type: BiasType
+    bias_type: BiasCategory
     severity: SeverityLevel
     examples: Optional[List[str]] = None
     context: str
@@ -519,20 +520,20 @@ async def classify_and_extract_biases(
     for finding in detailed_findings:
         bias_type_str = finding.get("bias_type", "")
         
-        # Map bias type string to BiasType enum
+        # Map bias type string to BiasCategory enum
         bias_type = None
         if "gender" in bias_type_str:
-            bias_type = BiasType.GENDER
+            bias_type = BiasCategory.GENDER
         elif "racial" in bias_type_str or "ethnic" in bias_type_str:
-            bias_type = BiasType.RACIAL
+            bias_type = BiasCategory.RACIAL
         elif "age" in bias_type_str:
-            bias_type = BiasType.AGE
+            bias_type = BiasCategory.AGE
         elif "socioeconomic" in bias_type_str:
-            bias_type = BiasType.SOCIOECONOMIC
+            bias_type = BiasCategory.SOCIOECONOMIC
         elif "disability" in bias_type_str:
-            bias_type = BiasType.DISABILITY
+            bias_type = BiasCategory.DISABILITY
         elif "lgbtq" in bias_type_str:
-            bias_type = BiasType.LGBTQ
+            bias_type = BiasCategory.LGBTQ
         
         if bias_type is None:
             continue
@@ -574,14 +575,14 @@ async def classify_and_extract_biases(
             if not already_detected:
                 ctx.logger.info(f"📋 Adding high-confidence RAG result: {bias_type_str}")
                 
-                # Map to BiasType enum
+                # Map to BiasCategory enum
                 bias_type = None
                 if "gender" in bias_type_str:
-                    bias_type = BiasType.GENDER
+                    bias_type = BiasCategory.GENDER
                 elif "racial" in bias_type_str:
-                    bias_type = BiasType.RACIAL
+                    bias_type = BiasCategory.RACIAL
                 elif "age" in bias_type_str:
-                    bias_type = BiasType.AGE
+                    bias_type = BiasCategory.AGE
                 
                 if bias_type:
                     detection = BiasDetection(

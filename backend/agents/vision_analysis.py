@@ -10,8 +10,73 @@ This module provides real visual bias detection using Anthropic's Claude Vision 
 import json
 import os
 import base64
+import re
 from typing import Dict, Any, List
 import requests
+
+
+def repair_json(json_str: str) -> str:
+    """
+    Repair malformed JSON from Claude Vision API.
+    Simple approach: escape all control characters within string contexts.
+    """
+    # Remove markdown code blocks
+    json_str = re.sub(r'^```json\s*', '', json_str)
+    json_str = re.sub(r'\s*```$', '', json_str)
+    
+    # Simple strategy: go through character by character
+    # Track if we're in a string by counting unescaped quotes
+    # Only escape control chars when inside strings
+    
+    result = []
+    i = 0
+    in_string = False
+    prev_char = ''
+    
+    while i < len(json_str):
+        char = json_str[i]
+        
+        # Check if this is an escape sequence
+        if prev_char == '\\' and in_string:
+            # This character is being escaped, just keep it
+            result.append(char)
+            prev_char = char if char != '\\' else ''  # Don't chain escapes
+            i += 1
+            continue
+        
+        if char == '"':
+            # Toggle string state (unless it was escaped, which we handled above)
+            in_string = not in_string
+            result.append(char)
+            prev_char = char
+            i += 1
+            continue
+        
+        if in_string:
+            # We're inside a string - escape control characters
+            if char == '\n':
+                result.append('\\n')
+            elif char == '\r':
+                result.append('\\r')
+            elif char == '\t':
+                result.append('\\t')
+            elif char == '\b':
+                result.append('\\b')
+            elif char == '\f':
+                result.append('\\f')
+            elif ord(char) < 32:
+                # Other control characters
+                result.append(f'\\u{ord(char):04x}')
+            else:
+                result.append(char)
+        else:
+            # Outside string, keep as-is
+            result.append(char)
+        
+        prev_char = char
+        i += 1
+    
+    return ''.join(result)
 
 
 # Claude API Configuration
@@ -206,7 +271,13 @@ Respond in JSON format with this EXACT structure:
     }}
 }}
 
-Be objective and specific. Provide actual counts and observations. If you identify ANY bias, it MUST appear in bias_detections as an object with all 5 required fields."""
+Be objective and specific. Provide actual counts and observations. If you identify ANY bias, it MUST appear in bias_detections as an object with all 5 required fields.
+
+**CRITICAL JSON FORMATTING**:
+- NEVER use double quotes inside string values - use single quotes or paraphrase instead
+- Example: WRONG: "text says \\"Drama\\"" RIGHT: "text says 'Drama'" or "text references drama"
+- All string values must be valid JSON with proper escaping
+- Respond with ONLY the JSON object, no additional text"""
 
         # Prepare content for Claude
         content = [
@@ -267,7 +338,39 @@ Be objective and specific. Provide actual counts and observations. If you identi
             try:
                 # We prefilled with "{", so prepend it back
                 json_str = "{" + text_response.strip()
-                analysis_result = json.loads(json_str)
+                
+                # Try to parse - if it fails, use repair function
+                try:
+                    analysis_result = json.loads(json_str)
+                    print(f"✅ JSON parsed successfully on first try!")
+                except json.JSONDecodeError as parse_err:
+                    print(f"⚠️  Initial parse failed: {parse_err}")
+                    print(f"   Error at: {json_str[max(0, parse_err.pos-50):parse_err.pos+50]}")
+                    print(f"🔧 Attempting to repair JSON with character-by-character fixing...")
+                    
+                    # Use aggressive JSON repair function
+                    repaired_json = repair_json(json_str)
+                    
+                    # Try parsing the repaired JSON
+                    try:
+                        analysis_result = json.loads(repaired_json)
+                        print(f"✅ JSON repaired and parsed successfully!")
+                    except json.JSONDecodeError as second_err:
+                        print(f"❌ Could not repair JSON: {second_err}")
+                        print(f"   Original length: {len(json_str)}")
+                        print(f"   Repaired length: {len(repaired_json)}")
+                        print(f"   Error at position {second_err.pos}")
+                        if second_err.pos < len(repaired_json):
+                            print(f"   Context: {repaired_json[max(0, second_err.pos-100):second_err.pos+100]}")
+                        return {
+                            "raw_analysis": text_response,
+                            "api_used": "claude_vision",
+                            "model": MODEL_ENGINE,
+                            "note": "Could not parse structured JSON, returning raw analysis",
+                            "parse_error": str(second_err),
+                            "original_error": str(parse_err)
+                        }
+                
                 analysis_result["api_used"] = "claude_vision"
                 analysis_result["model"] = MODEL_ENGINE
                 
@@ -409,12 +512,15 @@ Since this is a VIDEO, also consider:
 - Does the sequence of frames reinforce or challenge stereotypes?
 - Does the temporal sequence show one person "canceling" or ignoring another?
 
-**CRITICAL**: 
+**CRITICAL JSON FORMATTING**: 
 1. Respond in the SAME JSON format as above
 2. Your analysis should consider ALL frames together, not individually
-3. The "bias_detections" array is MANDATORY and MUST contain ALL biases you identify
-4. If frames show text like "Drama: off" with a woman speaking, this MUST be in bias_detections as gender bias
-5. NO conversational text - ONLY the JSON object"""
+3. The "bias_detections" array is MANDATORY and MUST contain ALL biases you identify as OBJECTS (not strings)
+4. If frames show text like 'Drama: off' with a woman speaking, this MUST be in bias_detections as gender bias
+5. NO conversational text - ONLY the JSON object
+6. NEVER use double quotes inside string values - use single quotes or paraphrase instead
+7. Example: WRONG: ["text says \\"Drama: off\\""] RIGHT: ["text says 'Drama: off'"] or ["text references drama being turned off"]
+8. All string values must be valid JSON strings with proper escaping"""
 
         # Build content array: alternating images and text
         print(f"🔄 Building API request content...")
@@ -487,18 +593,64 @@ Since this is a VIDEO, also consider:
                 
                 print(f"📊 JSON string length: {len(json_str)} characters")
                 print(f"🔄 Parsing JSON...")
-                analysis_result = json.loads(json_str)
-                print(f"✅ JSON parsed successfully!")
+                
+                # Try to parse - if it fails, use repair function
+                try:
+                    analysis_result = json.loads(json_str)
+                    print(f"✅ JSON parsed successfully on first try!")
+                except json.JSONDecodeError as parse_err:
+                    print(f"⚠️  Initial parse failed: {parse_err}")
+                    print(f"   Error at position {parse_err.pos}: {parse_err.msg}")
+                    if parse_err.pos < len(json_str):
+                        print(f"   Context: {json_str[max(0, parse_err.pos-50):min(len(json_str), parse_err.pos+50)]}")
+                    print(f"🔧 Attempting to repair JSON with character-by-character fixing...")
+                    
+                    # Use aggressive JSON repair function
+                    repaired_json = repair_json(json_str)
+                    print(f"📊 Repaired JSON length: {len(repaired_json)} characters")
+                    
+                    # Try parsing the repaired JSON
+                    try:
+                        analysis_result = json.loads(repaired_json)
+                        print(f"✅ JSON repaired and parsed successfully!")
+                    except json.JSONDecodeError as second_err:
+                        print(f"❌ Could not repair JSON: {second_err}")
+                        print(f"   Error at position {second_err.pos}: {second_err.msg}")
+                        if second_err.pos < len(repaired_json):
+                            print(f"   Error context: {repaired_json[max(0, second_err.pos-100):min(len(repaired_json), second_err.pos+100)]}")
+                        # Return raw response with error details
+                        return {
+                            "raw_analysis": text_response,
+                            "api_used": "claude_vision",
+                            "model": MODEL_ENGINE,
+                            "note": "Could not parse structured JSON, returning raw analysis",
+                            "parse_error": str(second_err),
+                            "original_error": str(parse_err),
+                            "repair_attempted": True
+                        }
                 
                 analysis_result["api_used"] = "claude_vision"
                 analysis_result["model"] = MODEL_ENGINE
                 analysis_result["frames_analyzed"] = len(frame_paths)
                 analysis_result["analysis_mode"] = "multi_frame_temporal"
                 
-                # FIX: Handle nested bias_detections in video_analysis
+                # FIX: Handle nested bias_detections in video_analysis OR bias_analysis
                 if "video_analysis" in analysis_result and "bias_detections" in analysis_result["video_analysis"]:
                     print(f"🔧 Moving nested bias_detections from video_analysis to top level...")
                     analysis_result["bias_detections"] = analysis_result["video_analysis"]["bias_detections"]
+                elif "bias_analysis" in analysis_result and "bias_detections" in analysis_result["bias_analysis"]:
+                    print(f"🔧 Moving nested bias_detections from bias_analysis to top level...")
+                    analysis_result["bias_detections"] = analysis_result["bias_analysis"]["bias_detections"]
+                    # Also extract other useful data from bias_analysis
+                    if "text_analysis" in analysis_result["bias_analysis"]:
+                        analysis_result["text_detected"] = analysis_result["bias_analysis"]["text_analysis"]
+                    if "representation" in analysis_result["bias_analysis"]:
+                        analysis_result["people_detected"] = {
+                            "total_count": sum(analysis_result["bias_analysis"]["representation"].get("gender_distribution", {}).values()),
+                            "visible_demographics": analysis_result["bias_analysis"]["representation"]
+                        }
+                    if "gender_dynamics" in analysis_result["bias_analysis"]:
+                        analysis_result["gender_dynamics"] = analysis_result["bias_analysis"]["gender_dynamics"]
                 
                 # FIX: Convert string bias_detections to objects if Claude ignored schema
                 if "bias_detections" in analysis_result:
@@ -509,45 +661,62 @@ Since this is a VIDEO, also consider:
                             print(f"⚠️  CONVERTING: Claude returned strings, converting to objects...")
                             fixed_detections = []
                             
-                            # Extract context from video_analysis if available
+                            # Extract context from video_analysis OR bias_analysis
                             video_data = analysis_result.get("video_analysis", {})
-                            demo = video_data.get("demographic_representation", {})
+                            bias_analysis_data = analysis_result.get("bias_analysis", {})
+                            demo = video_data.get("demographic_representation", {}) or bias_analysis_data.get("representation", {})
+                            text_data = bias_analysis_data.get("text_analysis", {})
+                            gender_dynamics = bias_analysis_data.get("gender_dynamics", {})
                             
                             for bias_str in bias_detections:
                                 # Determine type based on content
                                 bias_type = "contextual"
-                                if any(word in bias_str.lower() for word in ["gender", "women", "female", "male"]):
+                                if any(word in bias_str.lower() for word in ["gender", "women", "female", "male", "sexist", "misogyn", "drama"]):
                                     bias_type = "gender"
                                 elif any(word in bias_str.lower() for word in ["beauty", "body", "appearance", "diversity", "representation"]):
                                     bias_type = "representation"
                                 elif any(word in bias_str.lower() for word in ["youth", "age", "young", "old"]):
                                     bias_type = "stereotyping"
+                                elif any(word in bias_str.lower() for word in ["racial", "ethnic", "race"]):
+                                    bias_type = "racial"
                                 
-                                # Determine severity
-                                severity = "low"
-                                if any(word in bias_str.lower() for word in ["narrow", "limited", "exclusive", "problematic"]):
+                                # Determine severity - be more aggressive about gender/sexist bias
+                                severity = "medium"  # Default to medium instead of low
+                                if any(word in bias_str.lower() for word in ["implicit", "subtle", "minor"]):
+                                    severity = "low"
+                                if any(word in bias_str.lower() for word in ["problematic", "stereotyp", "reinfor"]):
                                     severity = "medium"
-                                if any(word in bias_str.lower() for word in ["critical", "severe", "extreme", "sexist", "racist"]):
+                                if any(word in bias_str.lower() for word in ["critical", "severe", "extreme", "sexist", "racist", "misogyn", "explicit"]):
                                     severity = "high"
                                 
-                                # Build evidence from video data
+                                # Build evidence from available data
                                 evidence = []
+                                
+                                # Add text evidence if available
+                                if text_data and "visible_text" in text_data:
+                                    evidence.append(f"Text: {text_data['visible_text']}")
+                                if text_data and "potential_biases" in text_data:
+                                    evidence.extend(text_data["potential_biases"])
+                                
+                                # Add demographic evidence
                                 if demo:
-                                    if "gender" in demo:
-                                        evidence.append(f"Gender: {demo.get('gender', 'unknown')}")
-                                    if "apparent_ethnicity" in demo:
-                                        evidence.append(f"Ethnicity: {demo.get('apparent_ethnicity', 'unknown')}")
+                                    if "gender_distribution" in demo:
+                                        evidence.append(f"Gender distribution: {demo['gender_distribution']}")
+                                    if "ethnicity" in demo:
+                                        evidence.append(f"Ethnicity: {demo['ethnicity']}")
                                     if "age_range" in demo:
-                                        evidence.append(f"Age: {demo.get('age_range', 'unknown')}")
-                                    if "body_type" in demo:
-                                        evidence.append(f"Body type: {demo.get('body_type', 'unknown')}")
+                                        evidence.append(f"Age: {demo['age_range']}")
+                                
+                                # Add gender dynamics evidence
+                                if gender_dynamics and "stereotypes_detected" in gender_dynamics:
+                                    evidence.extend(gender_dynamics["stereotypes_detected"])
                                 
                                 if not evidence:
                                     evidence = [bias_str]
                                 
                                 # Determine affected groups
                                 affected = []
-                                if "women" in bias_str.lower() or "female" in bias_str.lower() or "beauty" in bias_str.lower():
+                                if any(word in bias_str.lower() for word in ["women", "female", "drama", "emotion"]):
                                     affected.append("Women")
                                 if "body" in bias_str.lower() or "diversity" in bias_str.lower():
                                     affected.append("Body diversity")

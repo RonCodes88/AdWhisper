@@ -276,11 +276,17 @@ class ChromaDB:
         """
         collection = self.get_collection(collection_name)
         
-        # Get with filters
-        results = collection.get(
-            where=filters,
-            limit=n_results
-        )
+        # Get with filters - handle empty filters (get all)
+        if filters and len(filters) > 0:
+            results = collection.get(
+                where=filters,
+                limit=n_results
+            )
+        else:
+            # No filters - get all (up to limit)
+            results = collection.get(
+                limit=n_results
+            )
         
         return results
 
