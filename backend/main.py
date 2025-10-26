@@ -5,6 +5,10 @@ import uvicorn
 import uuid
 from typing import Dict, Any
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Note: No uAgents imports needed here - we just make HTTP requests!
 # ChromaDB is managed by agents, not by FastAPI
@@ -33,7 +37,7 @@ async def startup_event():
 
 # Configuration
 ENABLE_AGENT_CALLS = True  # Set to False to disable agent communication
-INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8100/ingest"  # Changed from /submit (reserved)
+INGESTION_AGENT_REST_ENDPOINT = "http://localhost:8101/process-youtube"  # Matches YouTube ingestion agent endpoint
 
 
 def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str, Any]):
@@ -47,28 +51,40 @@ def call_ingestion_agent_background(request_id: str, ingestion_payload: Dict[str
     print(f"📝 Request ID: {request_id}")
     print(f"🎯 Endpoint: {INGESTION_AGENT_REST_ENDPOINT}")
     
+    # Convert the payload to match the expected schema exactly
     try:
+        # Format payload for YouTube ingestion agent
+        formatted_payload = {
+            "request_id": ingestion_payload["request_id"],
+            "video_url": ingestion_payload.get("video_url"),
+            "metadata": ingestion_payload.get("metadata", {})
+        }
+        
+        print(f"📦 Payload: {formatted_payload}")
+        
         response = requests.post(
             INGESTION_AGENT_REST_ENDPOINT,
-            json=ingestion_payload,
+            json=formatted_payload,
             headers={"Content-Type": "application/json"},
-            timeout=10
+            timeout=30  # Increased timeout for processing
         )
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ SUCCESS - Ingestion Agent responded!")
-            print(f"📨 Agent Status: {result.get('status', 'unknown')}")
-            print(f"💬 Agent Message: {result.get('message', 'No message')}")
+            print(f"✅ SUCCESS - YouTube Agent responded!")
+            print(f"📨 Success: {result.get('success', 'unknown')}")
+            print(f"📝 Transcript: {len(result.get('transcript', ''))} chars")
+            print(f"🎬 Frames: {result.get('num_frames', 0)}")
+            print(f"🧠 Claude Analysis: {'✅' if result.get('transcript_analysis') else '❌'}")
         else:
-            print(f"⚠️ WARNING - Ingestion Agent returned HTTP {response.status_code}")
-            print(f"Response: {response.text[:200]}")
+            print(f"⚠️ WARNING - YouTube Agent returned HTTP {response.status_code}")
+            print(f"Response: {response.text[:500]}")
             
     except requests.exceptions.ConnectionError:
         print(f"❌ ERROR - Could not connect to Ingestion Agent")
         print(f"   Make sure it's running: python agents/ingestion_agent.py")
     except requests.exceptions.Timeout:
-        print(f"⏱️ ERROR - Ingestion Agent timed out (took > 10s)")
+        print(f"⏱️ ERROR - Ingestion Agent timed out (took > 30s)")
     except Exception as e:
         print(f"❌ ERROR - Unexpected error: {type(e).__name__}: {str(e)}")
     finally:
@@ -120,7 +136,7 @@ async def analyze_youtube_video(request: YouTubeAnalysisRequest, background_task
         # Create request payload for Ingestion Agent
         ingestion_payload = {
             "request_id": request_id,
-            "content_type": "video",
+            "content_type": "video",  # This will be converted to ContentType enum by the agent
             "text_content": None,  # Will be extracted by ingestion agent
             "image_url": None,
             "video_url": request.youtube_url,
