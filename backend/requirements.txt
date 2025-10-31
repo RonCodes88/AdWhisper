@@ -1,27 +1,38 @@
 # Web Framework
-fastapi
-uvicorn[standard]
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
 
 # Fetch.ai uAgents Framework
-uagents
-uagents-adapter
+uagents==0.22.10
+uagents-adapter==0.4.0
 
 # Vector Database
 chromadb
 protobuf>=4.21.6,<6.0.0
 
 # Embeddings & ML Models
-sentence-transformers
-openai
-transformers
-torch
-pillow
+sentence-transformers==3.3.1
+openai==1.57.0
+transformers==4.45.2
+torch==2.6.0
+pillow==11.0.0
+open-clip-torch==2.29.0
+
+# Video Processing
+opencv-python==4.10.0.84
+
+# Numerical & Data Processing
+numpy==2.2.0
+pandas==2.2.3
 
 # YouTube Processing
 youtube-transcript-api
 pytube
 
 # Utilities
-python-dotenv
-requests
-pydantic
+python-dotenv==1.0.1
+requests==2.32.3
+httpx==0.27.2
+pydantic==2.10.3
+aiofiles==24.1.0

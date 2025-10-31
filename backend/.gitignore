@@ -4,3 +4,6 @@ adwhisper
 *.db
 *.sqlite3
 .env
+.venv
+uploads/
+.DS_Store

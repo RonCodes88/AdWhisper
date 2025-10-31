@@ -168,8 +168,18 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    overscroll-behavior: none;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    min-height: 100%;
+    overscroll-behavior: none;
+    position: relative;
   }
 }
 

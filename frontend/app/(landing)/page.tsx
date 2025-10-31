@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
@@ -9,12 +9,14 @@ import CTASection from "../components/cta-section"
 function Badge({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="px-[14px] py-[6px] bg-white shadow-[0px_0px_0px_4px_rgba(55,50,47,0.05)] overflow-hidden rounded-[90px] flex justify-start items-center gap-[8px] border border-accent/20 shadow-xs">
-      <div className="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">{icon}</div>
+      <div className="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">
+        {icon}
+      </div>
       <div className="text-center flex justify-center flex-col text-foreground text-xs font-medium leading-3 font-sans">
         {text}
       </div>
     </div>
-  )
+  );
 }
 
 function FeatureCard({
@@ -24,11 +26,11 @@ function FeatureCard({
   progress,
   onClick,
 }: {
-  title: string
-  description: string
-  isActive: boolean
-  progress: number
-  onClick: () => void
+  title: string;
+  description: string;
+  isActive: boolean;
+  progress: number;
+  onClick: () => void;
 }) {
   return (
     <div
@@ -52,49 +54,49 @@ function FeatureCard({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default function LandingPage() {
-  const [activeCard, setActiveCard] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const mountedRef = useRef(true)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [activeCard, setActiveCard] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const mountedRef = useRef(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Reset mounted ref when component mounts
-    mountedRef.current = true
-    
+    mountedRef.current = true;
+
     const progressInterval = setInterval(() => {
-      if (!mountedRef.current) return
+      if (!mountedRef.current) return;
 
       setProgress((prev) => {
         if (prev >= 100) {
           if (mountedRef.current) {
-            setActiveCard((current) => (current + 1) % 3)
+            setActiveCard((current) => (current + 1) % 3);
           }
-          return 0
+          return 0;
         }
-        return prev + 2
-      })
-    }, 100)
-    
-    intervalRef.current = progressInterval
+        return prev + 2;
+      });
+    }, 100);
+
+    intervalRef.current = progressInterval;
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      mountedRef.current = false
-    }
-  }, [])
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleCardClick = (index: number) => {
-    if (!mountedRef.current) return
-    setActiveCard(index)
-    setProgress(0)
-  }
+    if (!mountedRef.current) return;
+    setActiveCard(index);
+    setProgress(0);
+  };
 
   return (
     <div className="w-full min-h-screen relative bg-background overflow-x-hidden flex flex-col justify-start items-center">
@@ -153,7 +155,6 @@ export default function LandingPage() {
           <div className="h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-border shadow-[1px_0px_0px_white] z-0"></div>
 
           <div className="self-stretch pt-[9px] overflow-hidden border-b border-border flex flex-col justify-center items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[66px] relative z-10">
-
             {/* Hero Section */}
             <div className="pt-16 sm:pt-20 md:pt-24 lg:pt-[216px] pb-8 sm:pb-12 md:pb-16 flex flex-col justify-start items-center px-2 sm:px-4 md:px-8 lg:px-0 w-full sm:pl-0 sm:pr-0 pl-0 pr-0 relative">
 
@@ -200,7 +201,9 @@ export default function LandingPage() {
                       <div className="relative w-full h-full overflow-hidden">
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 0 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 0
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -212,7 +215,9 @@ export default function LandingPage() {
 
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 1 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 1
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -224,7 +229,9 @@ export default function LandingPage() {
 
                         <div
                           className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                            activeCard === 2 ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-sm"
+                            activeCard === 2
+                              ? "opacity-100 scale-100 blur-0"
+                              : "opacity-0 scale-95 blur-sm"
                           }`}
                         >
                           <img
@@ -271,5 +278,5 @@ export default function LandingPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
